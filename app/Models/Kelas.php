@@ -28,4 +28,15 @@ class Kelas extends Model
     {
         return $this->hasMany(Siswa::class);
     }
+
+    public function denahs()
+    {
+        return $this->hasMany(Denah::class);
+    }
+
+    public function kelompokSesis()
+    {
+        return $this->hasMany(KelompokSesi::class);
+    }
+
 }

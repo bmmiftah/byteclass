@@ -14,6 +14,12 @@
         </form>
     </div>
 
+    <!-- Button Tempat Duduk -->
+    <a href="{{ route('denah.index', $kelas) }}"	class="nb-btn biru mb-6">Denah Tempat Duduk</a>
+
+    <!-- Button Bagi kelompok -->
+    <a href="{{ route('kelompok.index',	$kelas) }}" class="nb-btn pink mb-6">Kelompok</a>
+
     @if (session('ok'))
         <div class="nb-card mb-4" style="background: var(--hijau)">{{ session('ok') }}</div>
     @endif

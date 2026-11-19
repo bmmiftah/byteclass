@@ -40,11 +40,7 @@
             @php
                 $warna = ['var(--kuning)', 'var(--biru)', 'var(--pink)', 'var(--hijau)', 'var(--oranye)'][$loop->index % 5];
             @endphp
-            <a
-                href="{{ route('kelas.show', $k) }}"
-                class="nb-card hover muncul block"
-                style="background: {{ $warna }}; animation-delay: {{ $loop->index * 60 }}ms"
-            >
+            <a href="{{ route('kelas.show', $k) }}" class="nb-card hover muncul block" style="background: {{ $warna }}; animation-delay: {{ $loop->index * 60 }}ms">
                 <h2 class="text-2xl">{{ $k->nama }}</h2>
                 <p>{{ $k->tahun_ajaran }} &middot; Semester {{ $k->semester }}</p>
                 <p class="mt-3 font-bold">{{ $k->siswas_count }} siswa</p>
