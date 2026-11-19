@@ -1,0 +1,180 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+:root {
+	--ink: #111111;
+	--paper: #ffffff;
+	--kuning: #FFD93D;
+	--biru: #4D96FF;
+	--pink: #FF6B9D;
+	--hijau: #6BCB77;
+	--oranye: #FF8C42;
+	--merah: #FF4D4D;
+	--shadow: 4px 4px 0 var(--ink);
+}
+
+body {
+	font-family: 'Inter', system-ui, sans-serif;
+	color: var(--ink);
+	background: var(--paper);
+}
+
+h1, h2, h3, .judul {
+	font-family: 'Space Grotesk', sans-serif;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+}
+
+/* Kartu */
+.nb-card {
+	background: #fff;
+	border: 3px solid var(--ink);
+	box-shadow: var(--shadow);
+	padding: 1rem;
+	transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.nb-card.hover:hover {
+	transform: translate(-2px, -2px);
+	box-shadow: 6px 6px 0 var(--ink);
+}
+
+/* Tombol */
+.nb-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: .5rem;
+	min-height: 44px;
+	padding: .5rem 1.1rem;
+	font-weight: 700;
+	color: var(--ink);
+	background: var(--kuning);
+	border: 3px solid var(--ink);
+	box-shadow: var(--shadow);
+	cursor: pointer;
+	transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.nb-btn:hover {
+	transform: translate(-2px, -2px);
+	box-shadow: 6px 6px 0 var(--ink);
+}
+
+.nb-btn:active {
+	transform: translate(4px, 4px);
+	box-shadow: 0 0 0 var(--ink);
+}
+
+.nb-btn.biru {
+	background: var(--biru);
+}
+
+.nb-btn.merah {
+	background: var(--merah);
+}
+
+.nb-btn.putih {
+	background: #fff;
+}
+
+/* Form */
+.nb-label {
+	display: block;
+	font-weight: 700;
+	margin-bottom: .25rem;
+}
+
+.nb-input {
+	width: 100%;
+	min-height: 44px;
+	padding: .5rem .75rem;
+	font-size: 1rem;
+	background: #fff;
+	border: 3px solid var(--ink);
+	border-radius: 0;
+}
+
+.nb-input:focus {
+	outline: none;
+	box-shadow: var(--shadow);
+}
+
+.nb-error {
+	color: #b00020;
+	font-weight: 600;
+	margin-top: .25rem;
+}
+
+/* Navigasi */
+.nb-side {
+	border-right: 3px solid var(--ink);
+}
+
+.nb-bottom {
+	border-top: 3px solid var(--ink);
+}
+
+.nb-link {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+	padding: .6rem .8rem;
+	font-weight: 700;
+	border: 3px solid transparent;
+}
+
+.nb-link:hover {
+	border-color: var(--ink);
+}
+
+.nb-link.aktif {
+	background: var(--kuning);
+	border-color: var(--ink);
+	box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* Tabel */
+.nb-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.nb-table th {
+	background: var(--kuning);
+	text-align: left;
+}
+
+.nb-table th, .nb-table td {
+	border: 2px solid var(--ink);
+	padding: .5rem .75rem;
+}
+
+.nb-scroll {
+	overflow-x: auto;
+}
+
+/* Animasi masuk */
+@keyframes naik {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+.muncul {
+	animation: naik .35s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		transition: none !important;
+		animation: none !important;
+	}
+}
