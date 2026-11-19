@@ -14,6 +14,9 @@
         </form>
     </div>
 
+    <!-- Button Materi -->
+     <a	href="{{ route('materi.index', $kelas) }}"	class="nb-btn kuning mb-6">Materi</a>
+
     <!-- Button Tempat Duduk -->
     <a href="{{ route('denah.index', $kelas) }}"	class="nb-btn biru mb-6">Denah Tempat Duduk</a>
 

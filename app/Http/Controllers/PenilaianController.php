@@ -19,6 +19,7 @@ class PenilaianController extends Controller
     public function index(Kelas $kelas)
     {
         $this->milikKelas($kelas);
+        $babs = $kelas->materiBabs()->get();
 
         $user = auth()->user();
         $penilaians = $kelas->penilaians()
@@ -32,7 +33,7 @@ class PenilaianController extends Controller
         $sesis = $kelas->kelompokSesis()->latest()->get();
         $jumlahSiswa = $kelas->siswas()->where('aktif', true)->count();
 
-        return view('penilaian.index', compact('kelas', 'penilaians', 'mapels', 'rubriks', 'sesis', 'jumlahSiswa'));
+        return view('penilaian.index', compact('kelas', 'penilaians', 'mapels', 'rubriks', 'sesis', 'jumlahSiswa', 'babs'));
     }
 
     public function store(Request $request, Kelas $kelas)
@@ -49,19 +50,22 @@ class PenilaianController extends Controller
             'rubrik_id' => 'required|integer',
             'tanggal' => 'required|date',
             'kkm' => 'required|integer|min:0|max:100',
+            'materi_bab_id'	=>	'nullable|integer',
         ]);
 
         $rubrik = $user->rubriks()->with('kriterias')->findOrFail($data['rubrik_id']);
         $mapel = $data['mapel_id'] ? $user->mapels()->findOrFail($data['mapel_id']) : null;
         $sesi = $data['jenis'] === 'kelompok' ? $kelas->kelompokSesis()->findOrFail($data['kelompok_sesi_id']) : null;
+        $bab = $data['materi_bab_id']	?	$kelas->materiBabs()->findOrFail($data['materi_bab_id']) : null;
 
-        $penilaian = DB::transaction(function () use ($kelas, $data, $rubrik, $mapel, $sesi) {
+        $penilaian = DB::transaction(function () use ($kelas, $data, $rubrik, $mapel, $sesi, $bab) {
             $penilaian = $kelas->penilaians()->create([
                 'mapel_id' => $mapel?->id,
                 'rubrik_id' => $rubrik->id,
                 'kelompok_sesi_id' => $sesi?->id,
                 'judul' => $data['judul'],
-                'materi' => $data['materi'] ?? null,
+                'materi_bab_id' => $bab?->id,
+                'materi' => ($data['materi'] ?? null) ?: $bab?->judul,
                 'jenis' => $data['jenis'],
                 'tanggal' => $data['tanggal'],
                 'kkm' => $data['kkm'],

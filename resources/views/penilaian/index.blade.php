@@ -43,6 +43,17 @@
             @enderror
         </div>
 
+        <div class="md:col-span-6">
+            <label class="nb-label" for="materi_bab_id">Bab materi (opsional)</label>
+            <select class="nb-input" id="materi_bab_id" name="materi_bab_id">
+                <option value="">- tidak dikaitkan -</option>
+
+                @foreach ($babs as $b)
+                    <option value="{{ $b->id }}" @selected(old('materi_bab_id') == $b->id)>{{ $b->judul }}</option>
+                @endforeach
+            </select>
+        </div>
+
         <div class="md:col-span-3">
             <label class="nb-label" for="materi">Materi</label>
             <input

@@ -19,6 +19,7 @@ class Penilaian extends Model
         'jenis',
         'tanggal',
         'kkm',
+        'materi_bab_id',
     ];
 
     protected $casts = [
@@ -48,5 +49,10 @@ class Penilaian extends Model
     public function nilais()
     {
         return $this->hasMany(NilaiSiswa::class);
+    }
+
+    public function materiBab()
+    {
+        return $this->belongsTo(MateriBab::class);
     }
 }

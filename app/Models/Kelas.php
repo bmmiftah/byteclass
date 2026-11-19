@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use	Illuminate\Support\Str;
 
 class Kelas extends Model
 {
@@ -42,6 +43,18 @@ class Kelas extends Model
     public function penilaians()
     {
         return $this->hasMany(Penilaian::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Kelas $kelas) {
+            $kelas->kode_publik = $kelas->kode_publik ?: Str::lower(Str::random(8));
+        });
+    }
+
+    public function materiBabs()
+    {
+        return $this->hasMany(MateriBab::class)->orderBy('urutan')->orderBy('id');
     }
 
 }
