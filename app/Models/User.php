@@ -51,4 +51,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Kelas::class, 'guru_id');
     }
+
+    public function mapels()
+    {
+        return $this->hasMany(Mapel::class, 'guru_id');
+    }
+
+    public function rubriks()
+    {
+        return $this->hasMany(Rubrik::class, 'guru_id');
+    }
 }

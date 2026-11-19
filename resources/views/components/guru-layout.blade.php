@@ -14,7 +14,9 @@
 <body>
     @php
         $menu = [
-            ['Beranda', 'kelas.index', 'kelas.*'],
+            ['Kelas', 'kelas.index', ['kelas.*', 'denah.*', 'kelompok.*', 'penilaian.*']],
+            ['Rubrik', 'rubrik.index', ['rubrik.*']],
+            ['Mapel', 'mapel.index', ['mapel.*']],
         ];
     @endphp
 
@@ -23,7 +25,7 @@
         <aside class="hidden md:flex md:flex-col md:w-60 shrink-0 nb-side p-4 gap-2">
             <div class="judul text-2xl mb-4">Asisten<br>Guru</div>
             @foreach ($menu as [$nama, $rute, $pola])
-                <a href="{{ route($rute) }}" class="nb-link {{ request()->routeIs($pola) ? 'aktif' : '' }}">{{ $nama }}</a>
+                <a href="{{ route($rute) }}" class="nb-link {{ request()->routeIs(...$pola) ? 'aktif' : '' }}">{{ $nama }}</a>
             @endforeach
             <form method="POST" action="{{ route('logout') }}" class="mt-auto">
                 @csrf
@@ -40,7 +42,7 @@
     {{-- Menu bawah: HP --}}
     <nav class="md:hidden fixed bottom-0 inset-x-0 bg-white nb-bottom flex justify-around p-2 gap-2">
         @foreach ($menu as [$nama, $rute, $pola])
-            <a href="{{ route($rute) }}" class="nb-link flex-1 justify-center {{ request()->routeIs($pola) ? 'aktif' : '' }}">{{ $nama }}</a>
+            <a href="{{ route($rute) }}" class="nb-link flex-1 justify-center {{ request()->routeIs(...$pola) ? 'aktif' : '' }}">{{ $nama }}</a>
         @endforeach
         <form method="POST" action="{{ route('logout') }}" class="flex-1">
             @csrf

@@ -353,3 +353,21 @@ h1, h2, h3, .judul {
 .nb-btn.pink {	
 	background:	var(--pink);
 }
+
+/* ===== Penilaian ===== */
+
+.nb-btn.aktif {
+    background: var(--hijau);
+}
+
+.nb-btn.poin {
+    min-width: 48px;
+    padding: .4rem .6rem;
+}
+
+.nb-btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: var(--shadow);
+}

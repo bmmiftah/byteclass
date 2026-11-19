@@ -20,6 +20,12 @@
     <!-- Button Bagi kelompok -->
     <a href="{{ route('kelompok.index',	$kelas) }}" class="nb-btn pink mb-6">Kelompok</a>
 
+    <!-- Button Penilaian -->
+    <a href="{{ route('penilaian.index', $kelas) }}" class="nb-btn mb-6">Penilaian</a>
+
+    <!-- Button Rekap Nilai -->
+     <a href="{{ route('penilaian.rekapKelas', $kelas) }}" class="nb-btn putih mb-6">Rekap Nilai</a>
+
     @if (session('ok'))
         <div class="nb-card mb-4" style="background: var(--hijau)">{{ session('ok') }}</div>
     @endif

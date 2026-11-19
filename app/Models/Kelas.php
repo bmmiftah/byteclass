@@ -39,4 +39,9 @@ class Kelas extends Model
         return $this->hasMany(KelompokSesi::class);
     }
 
+    public function penilaians()
+    {
+        return $this->hasMany(Penilaian::class);
+    }
+
 }
