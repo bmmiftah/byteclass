@@ -81,33 +81,77 @@
                 @php $linkBab = route('siswa.bab', [$bab->kelas->kode_publik, $bab]); @endphp
 
                 <div
-                    class="nb-card"
+                    class="nb-card space-y-3"
                     style="background: var(--kuning)"
                     x-data="{
-                        unduh() {
-                            const a = document.createElement('a');
-                            a.href = this.$refs.qr.toDataURL('image/png');
-                            a.download = 'qr-bab-{{ $bab->id }}.png';
-                            a.click();
+                        ok: false,
+                        salin() {
+                            navigator.clipboard.writeText('{{ $linkBab }}');
+                            this.ok = true;
+                            setTimeout(() => this.ok = false, 1800);
                         }
                     }"
-                    x-init="$nextTick(() => QRCode.toCanvas($refs.qr, '{{ $linkBab }}', { width: 160, margin: 1 }))"
                 >
-                    <h2 class="text-lg mb-2">QR bab ini</h2>
-                    <canvas x-ref="qr" class="border-2 border-black bg-white mx-auto"></canvas>
+                    <h2 class="text-lg">Bagikan ke siswa</h2>
+                    <p class="text-xs break-all">{{ $linkBab }}</p>
 
-                    <div class="flex flex-wrap gap-2 mt-3">
-                        <button type="button" class="nb-btn putih" @click="unduh()">Unduh QR</button>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" class="nb-btn putih" @click="salin()" x-text="ok ? 'Tersalin' : 'Salin link'"></button>
+                        <x-qr-modal :url="$linkBab" :nama="'qr-bab-' . $bab->id" :judul="$bab->judul" />
                         <a class="nb-btn putih" href="{{ $linkBab }}" target="_blank">Lihat sebagai siswa</a>
                     </div>
                 </div>
             @else
                 <div class="nb-card">
                     <p class="font-bold">Belum terlihat siswa.</p>
-                    <p class="text-sm">
-                        QR dan tombol "Lihat sebagai siswa" muncul setelah bab berstatus Terbit dan jadwalnya tiba.
-                    </p>
+                    <p class="text-sm">Link dan QR muncul setelah bab berstatus Terbit dan jadwalnya tiba.</p>
                 </div>
+            @endif
+
+            @if ($kelasLain->isNotEmpty())
+                {{-- Bagikan: satu bab yang sama tampil di kelas lain --}}
+                <form method="POST" action="{{ route('materi.bagikan', $bab) }}" class="nb-card space-y-3">
+                    @csrf
+
+                    <h2 class="text-lg">Bagikan ke kelas lain</h2>
+                    <p class="text-xs">
+                        Bab yang sama ikut tampil di kelas yang dicentang, dan perubahan di sini ikut terlihat di sana. Hapus centang untuk menghentikan.
+                    </p>
+
+                    @foreach ($kelasLain as $k)
+                        <label class="flex items-center gap-2 font-bold">
+                            <input
+                                type="checkbox"
+                                name="kelas_ids[]"
+                                value="{{ $k->id }}"
+                                class="w-5 h-5"
+                                @checked(in_array($k->id, old('kelas_ids', $dibagikan)))
+                            >
+                            {{ $k->nama }}
+                        </label>
+                    @endforeach
+
+                    <button class="nb-btn w-full">Simpan pembagian</button>
+                </form>
+
+                {{-- Salin: bab baru yang berdiri sendiri --}}
+                <form method="POST" action="{{ route('materi.salin', $bab) }}" class="nb-card space-y-3">
+                    @csrf
+
+                    <h2 class="text-lg">Salin ke kelas lain</h2>
+                    <p class="text-xs">
+                        Membuat bab baru berstatus draft yang berdiri sendiri; perubahan sesudahnya tidak saling memengaruhi. File tidak memakan penyimpanan tambahan.
+                    </p>
+
+                    @foreach ($kelasLain as $k)
+                        <label class="flex items-center gap-2 font-bold">
+                            <input type="checkbox" name="kelas_ids[]" value="{{ $k->id }}" class="w-5 h-5">
+                            {{ $k->nama }}
+                        </label>
+                    @endforeach
+
+                    <button class="nb-btn putih w-full">Salin bab</button>
+                </form>
             @endif
 
             <form
@@ -130,7 +174,7 @@
                 enctype="multipart/form-data"
                 class="nb-card space-y-4"
                 style="background: var(--biru)"
-                x-data="{ tipe: 'file' }"
+                x-data="{ tipe: '{{ old('tipe', 'file') }}' }"
             >
                 @csrf
 
@@ -159,9 +203,7 @@
                         name="berkas"
                         accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp,.gif"
                     >
-                    <p class="text-xs mt-1">
-                        Gambar JPG/PNG/WEBP otomatis dikecilkan. Untuk video, pakai link YouTube/Drive.
-                    </p>
+                    <p class="text-xs mt-1">Gambar JPG/PNG/WEBP otomatis dikecilkan. Untuk video, pakai link YouTube/Drive.</p>
                 </div>
 
                 <div x-show="tipe === 'link'" style="display: none">
@@ -173,23 +215,21 @@
                         name="url"
                         placeholder="https://www.youtube.com/watch?v=..."
                     >
-                    <p class="text-xs mt-1">
-                        Link YouTube dan Google Drive (file) otomatis tampil sebagai pemutar di halaman siswa.
-                    </p>
+                    <p class="text-xs mt-1">Link YouTube dan Google Drive (file) otomatis tampil sebagai pemutar di halaman siswa.</p>
                 </div>
 
-                <div x-show="tipe === 'teks'" style="display: none">
-                    <label class="nb-label" for="isi">Isi teks</label>
-                    <textarea
-                        class="nb-input"
-                        id="isi"
-                        name="isi"
-                        rows="8"
-                        placeholder="Gunakan # Judul, - daftar, **tebal**"
-                    ></textarea>
-                    <p class="text-xs mt-1">
-                        Format sederhana (Markdown): <code># Judul</code>, <code>- butir</code>, <code>1. nomor</code>,
-                        <code>**tebal**</code>, <code>*miring*</code>.
+                <div>
+                    <label class="nb-label" x-text="tipe === 'teks' ? 'Isi teks' : 'Penjelasan (opsional)'">Penjelasan (opsional)</label>
+                    <x-editor-teks
+                        nama="isi"
+                        :nilai="old('isi')"
+                        petunjuk="Tulis penjelasan, sisipkan gambar atau tabel..."
+                    />
+                    @error('isi')
+                        <p class="nb-error mt-1">{{ $message }}</p>
+                    @enderror
+                    <p class="text-xs mt-1" x-show="tipe !== 'teks'">
+                        Penjelasan tampil di halaman siswa, di atas file/video/tautan di atas.
                     </p>
                 </div>
 
@@ -210,12 +250,22 @@
                                 @elseif ($item->url)
                                     {{ \Illuminate\Support\Str::limit($item->url, 60) }}
                                 @else
-                                    {{ \Illuminate\Support\Str::limit(strip_tags($item->isi), 60) }}
+                                    {{ $item->ringkasan(60) }}
+                                @endif
+
+                                @if ($item->tipe !== 'teks' && $item->isi_html)
+                                    <span class="nb-chip" style="background: var(--hijau)">+ penjelasan</span>
                                 @endif
                             </p>
                         </div>
 
                         <div class="flex items-center gap-2">
+                            <a
+                                class="nb-btn biru"
+                                style="padding: .25rem .7rem"
+                                href="{{ route('materi.item.edit', $item) }}"
+                            >Edit</a>
+
                             <form method="POST" action="{{ route('materi.item.pindah', $item) }}">
                                 @csrf
                                 <input type="hidden" name="arah" value="naik">

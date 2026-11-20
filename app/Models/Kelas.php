@@ -57,4 +57,16 @@ class Kelas extends Model
         return $this->hasMany(MateriBab::class)->orderBy('urutan')->orderBy('id');
     }
 
+    // Semua bab yang tampil di kelas ini: milik sendiri + yang dibagikan dari kelas lain
+    public function materiTampil()
+    {
+        return MateriBab::query()
+            ->where(function ($q) {
+                $q->where('kelas_id', $this->id)
+                    ->orWhereHas('kelasLain', fn ($k) => $k->whereKey($this->id));
+            })
+            ->orderBy('urutan')
+            ->orderBy('id');
+    }
+
 }

@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title>{{ $judul }} - Materi Belajar</title>
+    <title>{{ $judul }} - Ayo Belajar</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -20,7 +20,7 @@
             <a
                 href="{{ $kelas ? route('siswa.kelas', $kelas->kode_publik) : route('siswa.beranda') }}"
                 class="judul text-xl"
-            >Materi Belajar</a>
+            >Ayo Belajar</a>
 
             @if ($kelas)
                 <form method="GET" action="{{ route('siswa.cari', $kelas->kode_publik) }}" class="flex gap-2">
@@ -42,9 +42,10 @@
         {{ $slot }}
     </main>
 
-    <footer class="max-w-5xl mx-auto px-4 pb-8 text-sm">
+    <footer class="max-w-5xl mx-auto px-4 pb-8 text-sm flex flex-wrap items-center gap-3">
         @if ($kelas)
             <span class="nb-chip">{{ $kelas->nama }}</span>
+            <a class="underline" href="{{ route('siswa.beranda') }}">Ganti kelas</a>
         @endif
     </footer>
 </body>

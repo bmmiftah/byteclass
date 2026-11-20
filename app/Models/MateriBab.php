@@ -7,9 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class MateriBab extends Model
 {
-    protected $fillable = ['kelas_id', 'mapel_id', 'judul', 'deskripsi', 'urutan', 'status', 'terbit_pada'];
+    protected $fillable = [
+        'kelas_id',
+        'mapel_id',
+        'judul',
+        'deskripsi',
+        'urutan',
+        'status',
+        'terbit_pada',
+    ];
 
-    protected $casts = ['terbit_pada' => 'datetime'];
+    protected $casts = [
+        'terbit_pada' => 'datetime',
+    ];
 
     public function kelas()
     {
@@ -19,6 +29,18 @@ class MateriBab extends Model
     public function mapel()
     {
         return $this->belongsTo(Mapel::class);
+    }
+
+    // kelas lain yang ikut menampilkan bab ini (fitur "bagikan")
+    public function kelasLain()
+    {
+        return $this->belongsToMany(Kelas::class, 'materi_bab_kelas', 'materi_bab_id', 'kelas_id');
+    }
+
+    // bab ini boleh tampil di kelas tersebut? (kelas asal atau kelas yang dibagikan)
+    public function tersediaUntuk(Kelas $kelas): bool
+    {
+        return $this->kelas_id === $kelas->id || $this->kelasLain()->whereKey($kelas->id)->exists();
     }
 
     public function items()

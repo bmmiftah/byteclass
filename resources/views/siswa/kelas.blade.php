@@ -1,9 +1,71 @@
 <x-siswa-layout :judul="$kelas->nama" :kelas="$kelas">
-    <h1 class="text-3xl md:text-4xl mb-1">{{ $kelas->nama }}</h1>
-    <p class="mb-6">Pilih bab untuk mulai belajar.</p>
+    {{-- Kepala dashboard --}}
+    <div class="nb-card mb-6 muncul" style="background: var(--kuning)">
+        <p class="text-sm font-bold">Dashboard kelas</p>
+        <h1 class="text-3xl md:text-4xl">{{ $kelas->nama }}</h1>
+        <p class="mt-1">{{ $kelas->tahun_ajaran }} &middot; Semester {{ $kelas->semester }}</p>
+    </div>
+
+    {{-- Ringkasan --}}
+    <div class="grid gap-4 sm:grid-cols-3 mb-8">
+        <a
+            href="#materi"
+            class="nb-card hover muncul block"
+            style="background: var(--biru); animation-delay: 60ms"
+        >
+            <p class="judul text-4xl">{{ $jumlahBab }}</p>
+            <p class="font-bold">Bab</p>
+        </a>
+
+        <a
+            href="#materi"
+            class="nb-card hover muncul block"
+            style="background: var(--pink); animation-delay: 120ms"
+        >
+            <p class="judul text-4xl">{{ $jumlahMateri }}</p>
+            <p class="font-bold">Materi</p>
+        </a>
+
+        @if (Route::has('cbt.masuk'))
+            <a
+                href="{{ route('cbt.masuk') }}"
+                class="nb-card hover muncul block"
+                style="background: var(--hijau); animation-delay: 180ms"
+            >
+                <p class="judul text-4xl">&rarr;</p>
+                <p class="font-bold">Ujian (CBT)</p>
+            </a>
+        @endif
+    </div>
+
+    {{-- Baru ditambahkan --}}
+    @if ($terbaru->isNotEmpty())
+        <h2 class="text-2xl mb-3">Baru ditambahkan</h2>
+
+        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-10">
+            @foreach ($terbaru as $b)
+                <a
+                    href="{{ route('siswa.bab', [$kelas->kode_publik, $b]) }}"
+                    class="nb-card hover muncul block"
+                    style="animation-delay: {{ $loop->index * 60 }}ms"
+                >
+                    @if ($b->baru())
+                        <span class="stiker mb-2">Baru</span>
+                    @endif
+
+                    <p class="text-sm">{{ $b->mapel?->nama ?? 'Umum' }}</p>
+                    <h3 class="text-xl">{{ $b->judul }}</h3>
+                    <p class="mt-2 font-bold text-sm">{{ $b->items_count }} materi</p>
+                </a>
+            @endforeach
+        </div>
+    @endif
+
+    {{-- Semua materi per mapel --}}
+    <h2 id="materi" class="text-2xl mb-1">Materi per mata pelajaran</h2>
 
     @forelse ($babs as $namaMapel => $daftar)
-        <h2 class="text-2xl mt-8 mb-3">{{ $namaMapel }}</h2>
+        <h3 class="text-xl mt-6 mb-3">{{ $namaMapel }}</h3>
 
         <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             @foreach ($daftar as $b)
@@ -31,7 +93,7 @@
             @endforeach
         </div>
     @empty
-        <div class="nb-card">
+        <div class="nb-card mt-4">
             <p class="font-bold">Belum ada materi yang terbit.</p>
             <p>Coba lagi nanti, atau tanyakan ke gurumu.</p>
         </div>

@@ -10,10 +10,10 @@ use Illuminate\Support\Facades\Storage;
 
 class SiswaMateriController extends Controller
 {
-    // Halaman awal: isi kode kelas
+    // Beranda website siswa: cukup masukkan kode akses
     public function beranda(Request $request)
     {
-        $kode = strtolower(trim((string) $request->query('kode')));
+        $kode = preg_replace('/[^a-z0-9]/', '', strtolower((string) $request->query('kode')));
 
         if ($kode === '') {
             return view('siswa.beranda', ['galat' => null]);
@@ -25,30 +25,50 @@ class SiswaMateriController extends Controller
             return redirect()->route('siswa.kelas', $kelas->kode_publik);
         }
 
-        return view('siswa.beranda', ['galat' => 'Kode kelas tidak ditemukan. Periksa lagi ya.']);
+        return view('siswa.beranda', ['galat' => 'Kode akses tidak ditemukan. Periksa lagi ya.']);
     }
 
-    // Daftar bab satu kelas, dikelompokkan per mapel
+    // Dashboard kelas
     public function kelas(string $kode)
     {
         $kelas = $this->cariKelas($kode);
-        $babs = $kelas->materiBabs()->terlihat()->with('mapel')->withCount('items')->get()
-            ->groupBy(fn ($b) => $b->mapel?->nama ?? 'Umum');
+        $semua = $kelas->materiTampil()->terlihat()->with('mapel')->withCount('items')->get();
+        $terbaru = $semua->sortByDesc(fn ($b) => $b->terbit_pada ?? $b->created_at)->take(3)->values();
+        $babs = $semua->groupBy(fn ($b) => $b->mapel?->nama ?? 'Umum');
+        $jumlahMateri = $semua->sum('items_count');
 
-        return view('siswa.kelas', compact('kelas', 'babs'));
+        return view('siswa.kelas', compact('kelas', 'babs', 'terbaru', 'jumlahMateri'))
+            ->with('jumlahBab', $semua->count());
     }
 
-    // Isi satu bab
+    // Daftar materi dalam satu bab
     public function bab(string $kode, MateriBab $bab)
     {
         $kelas = $this->cariKelas($kode);
-        abort_unless($bab->kelas_id === $kelas->id && $bab->bisaDilihat(), 404);
+        abort_unless($bab->tersediaUntuk($kelas) && $bab->bisaDilihat(), 404);
         $bab->load('items', 'mapel');
 
         return view('siswa.bab', compact('kelas', 'bab'));
     }
 
-    // Menyajikan file privat setelah dicek (bab harus terbit)
+    // Satu materi di halaman sendiri
+    public function item(string $kode, MateriItem $item)
+    {
+        $kelas = $this->cariKelas($kode);
+        $bab = $item->bab;
+        abort_unless($bab->tersediaUntuk($kelas) && $bab->bisaDilihat(), 404);
+
+        $items = $bab->items;
+        $i = $items->search(fn ($x) => $x->id === $item->id);
+        $sebelum = $i > 0 ? $items[$i - 1] : null;
+        $sesudah = $items[$i + 1] ?? null;
+
+        return view('siswa.item', compact('kelas', 'bab', 'item', 'sebelum', 'sesudah'))
+            ->with('nomor', $i + 1)
+            ->with('total', $items->count());
+    }
+
+    // Menyajikan file privat setelah dicek (bab harus terbit dan tersedia untuk kelas ini)
     public function berkas(Request $request, string $kode, MateriItem $item)
     {
         $kelas = $this->cariKelas($kode);
@@ -56,7 +76,7 @@ class SiswaMateriController extends Controller
 
         abort_unless(
             $item->tipe === 'file' && $item->path
-            && $bab->kelas_id === $kelas->id && $bab->bisaDilihat()
+            && $bab->tersediaUntuk($kelas) && $bab->bisaDilihat()
             && Storage::disk('local')->exists($item->path),
             404
         );
@@ -69,6 +89,17 @@ class SiswaMateriController extends Controller
         );
     }
 
+    // Gambar yang disisipkan di dalam teks materi (nama acak, tidak bisa ditebak)
+    public function gambar(string $nama)
+    {
+        $path = 'materi-gambar/'.$nama;
+        abort_unless(Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path, null, [
+            'Cache-Control' => 'public, max-age=31536000, immutable',
+        ]);
+    }
+
     // Pencarian di dalam satu kelas
     public function cari(Request $request, string $kode)
     {
@@ -78,7 +109,7 @@ class SiswaMateriController extends Controller
 
         if (mb_strlen($q) >= 2) {
             $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $q).'%';
-            $hasil = $kelas->materiBabs()->terlihat()->with('mapel')
+            $hasil = $kelas->materiTampil()->terlihat()->with('mapel')
                 ->where(function ($w) use ($like) {
                     $w->where('judul', 'like', $like)
                         ->orWhere('deskripsi', 'like', $like)

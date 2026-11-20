@@ -13,7 +13,6 @@ use App\Http\Controllers\MateriController;
 use App\Http\Controllers\SiswaMateriController;
 
 Route::middleware('auth')->group(function () {
-    Route::get('/', fn () => redirect()->route('kelas.index'));
     Route::get('/dashboard', fn () => redirect()->route('kelas.index'))->name('dashboard');
 
     Route::resource('kelas', KelasController::class)
@@ -82,19 +81,30 @@ Route::middleware('auth')->group(function () {
     Route::put('materi/{bab}', [MateriController::class, 'update'])->name('materi.update');
     Route::delete('materi/{bab}', [MateriController::class, 'destroy'])->name('materi.destroy');
     Route::post('materi/{bab}/pindah', [MateriController::class, 'pindahBab'])->name('materi.pindahBab');
+    Route::post('materi/{bab}/bagikan', [MateriController::class, 'bagikan'])->name('materi.bagikan');
+    Route::post('materi/{bab}/salin', [MateriController::class, 'salin'])->name('materi.salin');
 
     Route::post('materi/{bab}/item', [MateriController::class, 'itemStore'])->name('materi.item.store');
     Route::delete('materi-item/{item}', [MateriController::class, 'itemDestroy'])->name('materi.item.destroy');
     Route::post('materi-item/{item}/pindah', [MateriController::class, 'itemPindah'])->name('materi.item.pindah');
 
+    Route::get('materi-item/{item}/edit', [MateriController::class, 'itemEdit'])->name('materi.item.edit');
+    Route::put('materi-item/{item}', [MateriController::class, 'itemUpdate'])->name('materi.item.update');
+    Route::post('materi-gambar', [MateriController::class, 'gambarUnggah'])->name('materi.gambar');
+    Route::get('gbr/{nama}', [SiswaMateriController::class, 'gambar'])
+    ->where('nama', '[A-Za-z0-9]{32}\.(jpg|png|webp|gif)')
+    ->name('gambar.lihat');
+
 });
 
 // ============== Route Siswa ==================== //
-Route::middleware('throttle:60,1')->group(function () {
-    Route::get('belajar', [SiswaMateriController::class, 'beranda'])->name('siswa.beranda');
+Route::middleware('throttle:240,1')->group(function () {
+    Route::get('/', [SiswaMateriController::class, 'beranda'])->name('siswa.beranda');
+    Route::get('belajar', fn (\Illuminate\Http\Request $r) => redirect()->route('siswa.beranda', $r->query()));
     Route::get('m/{kode}', [SiswaMateriController::class, 'kelas'])->name('siswa.kelas');
     Route::get('m/{kode}/cari', [SiswaMateriController::class, 'cari'])->name('siswa.cari');
     Route::get('m/{kode}/bab/{bab}', [SiswaMateriController::class, 'bab'])->name('siswa.bab');
+    Route::get('m/{kode}/materi/{item}', [SiswaMateriController::class, 'item'])->name('siswa.item');
     Route::get('m/{kode}/berkas/{item}', [SiswaMateriController::class, 'berkas'])->name('siswa.berkas');
 });
 

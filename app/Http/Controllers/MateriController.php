@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Kelas;
 use App\Models\MateriBab;
 use App\Models\MateriItem;
+use App\Services\BersihkanHtml;
 use App\Services\KompresGambar;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,7 @@ class MateriController extends Controller
     public function index(Kelas $kelas)
     {
         $this->milikKelas($kelas);
-        $babs = $kelas->materiBabs()->with('mapel')->withCount('items')->get();
+        $babs = $kelas->materiTampil()->with('mapel', 'kelas')->withCount(['items', 'kelasLain'])->get();
         $mapels = auth()->user()->mapels()->orderBy('nama')->get();
 
         // penyimpanan terpakai (semua kelas milik guru ini)
@@ -56,7 +57,11 @@ class MateriController extends Controller
         $bab->load('items', 'kelas', 'mapel');
         $mapels = auth()->user()->mapels()->orderBy('nama')->get();
 
-        return view('materi.edit', compact('bab', 'mapels'));
+        // kelas lain milik guru ini (untuk fitur bagikan / salin)
+        $kelasLain = auth()->user()->kelas()->where('id', '!=', $bab->kelas_id)->orderBy('nama')->get();
+        $dibagikan = $bab->kelasLain()->pluck('kelas.id')->all();
+
+        return view('materi.edit', compact('bab', 'mapels', 'kelasLain', 'dibagikan'));
     }
 
     public function update(Request $request, MateriBab $bab)
@@ -93,6 +98,56 @@ class MateriController extends Controller
         return back();
     }
 
+    /* ---------- Bagikan / salin ke kelas lain ---------- */
+
+    // BAGIKAN: satu bab yang sama tampil di beberapa kelas (perubahan ikut terlihat)
+    public function bagikan(Request $request, MateriBab $bab)
+    {
+        $this->milikBab($bab);
+        $ids = $request->validate([
+            'kelas_ids' => 'nullable|array',
+            'kelas_ids.*' => 'integer',
+        ])['kelas_ids'] ?? [];
+
+        // hanya kelas milik guru ini, selain kelas asal bab
+        $sah = auth()->user()->kelas()->whereIn('id', $ids)->where('id', '!=', $bab->kelas_id)->pluck('id')->all();
+        $bab->kelasLain()->sync($sah);
+
+        return back()->with('ok', count($sah) ? 'Bab dibagikan ke '.count($sah).' kelas lain.' : 'Pembagian dihentikan.');
+    }
+
+    // SALIN: membuat bab baru yang berdiri sendiri di kelas lain (berstatus draft)
+    public function salin(Request $request, MateriBab $bab)
+    {
+        $this->milikBab($bab);
+        $ids = $request->validate([
+            'kelas_ids' => 'required|array|min:1',
+            'kelas_ids.*' => 'integer',
+        ])['kelas_ids'];
+        $tujuan = auth()->user()->kelas()->whereIn('id', $ids)->where('id', '!=', $bab->kelas_id)->get();
+        $bab->load('items');
+
+        DB::transaction(function () use ($bab, $tujuan) {
+            foreach ($tujuan as $k) {
+                $baru = $bab->replicate();
+                $baru->kelas_id = $k->id;
+                $baru->status = 'draft';
+                $baru->terbit_pada = null;
+                $baru->urutan = ((int) MateriBab::where('kelas_id', $k->id)->max('urutan')) + 1;
+                $baru->save();
+
+                // file tidak digandakan di disk: salinan memakai file yang sama
+                foreach ($bab->items as $item) {
+                    $salinan = $item->replicate();
+                    $salinan->bab_id = $baru->id;
+                    $salinan->save();
+                }
+            }
+        });
+
+        return back()->with('ok', 'Bab disalin ke '.$tujuan->count().' kelas (berstatus draft; terbitkan di kelas tujuan).');
+    }
+
     /* ---------- Item materi ---------- */
 
     public function itemStore(Request $request, MateriBab $bab)
@@ -100,6 +155,15 @@ class MateriController extends Controller
         $this->milikBab($bab);
         $tipe = $request->validate(['tipe' => 'required|in:file,link,teks'])['tipe'];
         $urutan = ((int) MateriItem::where('bab_id', $bab->id)->max('urutan')) + 1;
+
+        // Semua jenis boleh punya teks (penjelasan); khusus jenis Teks, isinya wajib.
+        $isi = BersihkanHtml::proses($request->input('isi'));
+
+        if ($tipe === 'teks' && $isi === null) {
+            return back()->withInput()->withErrors(['isi' => 'Isi teks tidak boleh kosong.']);
+        }
+
+        $dasar = ['isi' => $isi, 'isi_format' => 'html', 'urutan' => $urutan];
 
         if ($tipe === 'file') {
             $request->validate([
@@ -114,14 +178,13 @@ class MateriController extends Controller
                 KompresGambar::proses(Storage::disk('local')->path($path));
             }
 
-            $bab->items()->create([
+            $bab->items()->create($dasar + [
                 'tipe' => 'file',
                 'judul' => $request->input('judul'),
                 'path' => $path,
                 'nama_asli' => $berkas->getClientOriginalName(),
                 'ekstensi' => $ext,
                 'ukuran' => Storage::disk('local')->size($path),
-                'urutan' => $urutan,
             ]);
         } elseif ($tipe === 'link') {
             $v = $request->validate([
@@ -129,26 +192,74 @@ class MateriController extends Controller
                 'url' => 'required|url:http,https|max:500',
             ]);
             $item = new MateriItem(['url' => $v['url']]);
-            $bab->items()->create([
+            $bab->items()->create($dasar + [
                 'tipe' => $item->embed ? 'video' : 'link',
                 'judul' => $v['judul'],
                 'url' => $v['url'],
-                'urutan' => $urutan,
             ]);
         } else {
-            $v = $request->validate([
-                'judul' => 'required|string|max:150',
-                'isi' => 'required|string|max:20000',
-            ]);
-            $bab->items()->create([
+            $request->validate(['judul' => 'required|string|max:150']);
+            $bab->items()->create($dasar + [
                 'tipe' => 'teks',
-                'judul' => $v['judul'],
-                'isi' => $v['isi'],
-                'urutan' => $urutan,
+                'judul' => $request->input('judul'),
             ]);
         }
 
         return back()->with('ok', 'Materi ditambahkan.');
+    }
+
+    // Halaman sunting satu materi (judul, tautan, teks/penjelasan)
+    public function itemEdit(MateriItem $item)
+    {
+        $this->milikBab($item->bab);
+
+        return view('materi.item_edit', ['item' => $item, 'bab' => $item->bab]);
+    }
+
+    public function itemUpdate(Request $request, MateriItem $item)
+    {
+        $this->milikBab($item->bab);
+        $aturan = ['judul' => 'required|string|max:150'];
+
+        if (in_array($item->tipe, ['link', 'video'], true)) {
+            $aturan['url'] = 'required|url:http,https|max:500';
+        }
+
+        $v = $request->validate($aturan);
+        $isi = BersihkanHtml::proses($request->input('isi'));
+
+        if ($item->tipe === 'teks' && $isi === null) {
+            return back()->withInput()->withErrors(['isi' => 'Isi teks tidak boleh kosong.']);
+        }
+
+        $item->judul = $v['judul'];
+        $item->isi = $isi;
+        $item->isi_format = 'html';
+
+        if (isset($v['url'])) {
+            $item->url = $v['url'];
+            $item->tipe = $item->embed ? 'video' : 'link';
+        }
+
+        $item->save();
+
+        return redirect()->route('materi.edit', $item->bab_id)->with('ok', 'Materi disimpan.');
+    }
+
+    // Unggah gambar dari dalam editor teks; mengembalikan alamat gambar
+    public function gambarUnggah(Request $request)
+    {
+        $request->validate(['gambar' => 'required|file|max:10240|mimes:jpg,jpeg,png,webp,gif']);
+        $berkas = $request->file('gambar');
+        $ext = $berkas->extension() === 'jpeg' ? 'jpg' : $berkas->extension();
+        $nama = Str::random(32).'.'.$ext;
+        $path = $berkas->storeAs('materi-gambar', $nama, 'local');
+
+        if (in_array($ext, ['jpg', 'png', 'webp'], true)) {
+            KompresGambar::proses(Storage::disk('local')->path($path));
+        }
+
+        return response()->json(['url' => route('gambar.lihat', $nama, false)]);
     }
 
     public function itemDestroy(MateriItem $item)
@@ -215,9 +326,10 @@ class MateriController extends Controller
         }
     }
 
+    // file hanya dihapus dari disk bila tidak dipakai item lain (hasil salin memakai file yang sama)
     private function hapusBerkas(MateriItem $item): void
     {
-        if ($item->path) {
+        if ($item->path && ! MateriItem::where('path', $item->path)->where('id', '!=', $item->id)->exists()) {
             Storage::disk('local')->delete($item->path);
         }
     }

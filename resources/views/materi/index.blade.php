@@ -6,56 +6,44 @@
         <div class="nb-card mb-4" style="background: var(--hijau)">{{ session('ok') }}</div>
     @endif
 
-    {{-- Akses siswa --}}
+    {{-- Akses siswa (ringkas) --}}
     @php $linkKelas = route('siswa.kelas', $kelas->kode_publik); @endphp
 
     <div
-        class="nb-card mb-8 grid gap-5 md:grid-cols-3"
+        class="nb-card mb-8"
         style="background: var(--biru)"
         x-data="{
+            ok: false,
             salin() {
                 navigator.clipboard.writeText('{{ $linkKelas }}');
                 this.ok = true;
                 setTimeout(() => this.ok = false, 1800);
-            },
-            unduh() {
-                const a = document.createElement('a');
-                a.href = this.$refs.qr.toDataURL('image/png');
-                a.download = 'qr-{{ $kelas->kode_publik }}.png';
-                a.click();
-            },
-            ok: false
+            }
         }"
-        x-init="$nextTick(() => QRCode.toCanvas($refs.qr, '{{ $linkKelas }}', { width: 176, margin: 1 }))"
     >
-        <div class="md:col-span-2 space-y-3">
-            <h2 class="text-xl">Akses siswa</h2>
-            <p>Siswa membuka link ini, memindai QR, atau memasukkan kode di halaman <b>{{ url('/belajar') }}</b>.</p>
-            <p>
-                Kode kelas:
-                <span class="judul text-3xl bg-white border-2 border-black px-3 py-1 inline-block">{{ $kelas->kode_publik }}</span>
-            </p>
-            <p class="break-all text-sm">{{ $linkKelas }}</p>
-
-            <div class="flex flex-wrap gap-2">
-                <button type="button" class="nb-btn putih" @click="salin()" x-text="ok ? 'Tersalin' : 'Salin link'"></button>
-                <button type="button" class="nb-btn putih" @click="unduh()">Unduh QR</button>
-                <a class="nb-btn putih" href="{{ $linkKelas }}" target="_blank">Lihat tampilan siswa</a>
+        <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+            <div>
+                <h2 class="text-xl">Akses siswa</h2>
+                <p class="text-sm">Siswa membuka <b>{{ url('/') }}</b> lalu memasukkan kode ini.</p>
             </div>
 
-            <form
-                method="POST"
-                action="{{ route('materi.kodeBaru', $kelas) }}"
-                onsubmit="return confirm('Kode lama akan mati. Link dan QR yang sudah dibagikan tidak berlaku lagi. Lanjutkan?')"
-            >
-                @csrf
-                <button class="underline font-bold">Buat kode baru</button>
-            </form>
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="judul text-2xl bg-white border-2 border-black px-3 py-1" title="Kode kelas">{{ $kelas->kode_publik }}</span>
+                <button type="button" class="nb-btn putih" @click="salin()" x-text="ok ? 'Tersalin' : 'Salin link'"></button>
+                <x-qr-modal :url="$linkKelas" :nama="'qr-' . $kelas->kode_publik" :judul="'QR ' . $kelas->nama" />
+                <a class="nb-btn putih" href="{{ $linkKelas }}" target="_blank">Lihat tampilan siswa</a>
+            </div>
         </div>
 
-        <div class="flex md:justify-end">
-            <canvas x-ref="qr" class="border-2 border-black bg-white"></canvas>
-        </div>
+        <form
+            method="POST"
+            action="{{ route('materi.kodeBaru', $kelas) }}"
+            class="mt-3"
+            onsubmit="return confirm('Kode lama akan mati. Link dan QR yang sudah dibagikan tidak berlaku lagi. Lanjutkan?')"
+        >
+            @csrf
+            <button class="underline font-bold text-sm">Buat kode baru</button>
+        </form>
     </div>
 
     <p class="text-sm mb-4">
@@ -108,6 +96,15 @@
                 >
                     <div class="min-w-[200px] flex-1">
                         <p class="font-bold text-lg">{{ $b->judul }}</p>
+
+                        @if ($b->kelas_id !== $kelas->id)
+                            <span class="nb-chip" style="background: var(--pink)">Dibagikan dari {{ $b->kelas->nama }}</span>
+                        @endif
+
+                        @if ($b->kelas_lain_count)
+                            <span class="nb-chip" style="background: var(--hijau)">Dibagikan ke {{ $b->kelas_lain_count }} kelas</span>
+                        @endif
+
                         <p class="text-sm">
                             {{ $b->items_count }} materi
                             @if ($b->status === 'terbit' && $b->terbit_pada && ! $b->bisaDilihat())
@@ -123,17 +120,19 @@
                     <span class="nb-chip" style="background: {{ $warna }}">{{ $b->labelStatus() }}</span>
 
                     <div class="flex items-center gap-2">
-                        <form method="POST" action="{{ route('materi.pindahBab', $b) }}">
-                            @csrf
-                            <input type="hidden" name="arah" value="naik">
-                            <button class="nb-btn putih" style="padding: .25rem .6rem" aria-label="Naik">&uarr;</button>
-                        </form>
+                        @if ($b->kelas_id === $kelas->id)
+                            <form method="POST" action="{{ route('materi.pindahBab', $b) }}">
+                                @csrf
+                                <input type="hidden" name="arah" value="naik">
+                                <button class="nb-btn putih" style="padding: .25rem .6rem" aria-label="Naik">&uarr;</button>
+                            </form>
 
-                        <form method="POST" action="{{ route('materi.pindahBab', $b) }}">
-                            @csrf
-                            <input type="hidden" name="arah" value="turun">
-                            <button class="nb-btn putih" style="padding: .25rem .6rem" aria-label="Turun">&darr;</button>
-                        </form>
+                            <form method="POST" action="{{ route('materi.pindahBab', $b) }}">
+                                @csrf
+                                <input type="hidden" name="arah" value="turun">
+                                <button class="nb-btn putih" style="padding: .25rem .6rem" aria-label="Turun">&darr;</button>
+                            </form>
+                        @endif
 
                         <a class="nb-btn biru" href="{{ route('materi.edit', $b) }}">Edit</a>
                     </div>

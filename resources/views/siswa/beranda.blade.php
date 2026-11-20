@@ -44,9 +44,9 @@
             <polygon points="46,6 88,80 4,80" fill="#6BCB77" stroke="#111" stroke-width="4" />
         </svg>
 
-        <h1 class="text-4xl md:text-5xl mb-3 muncul">Materi Belajar</h1>
+        <h1 class="text-4xl md:text-5xl mb-3 muncul">Ayo Belajar</h1>
         <p class="mb-8 muncul" style="animation-delay: 80ms">
-            Masukkan kode kelas dari gurumu, atau pindai QR yang dibagikan.
+            Masukkan kode akses dari gurumu untuk membuka dashboard kelas.
         </p>
 
         <form
@@ -55,7 +55,7 @@
             class="nb-card space-y-4 muncul"
             style="background: var(--kuning); animation-delay: 160ms"
         >
-            <label class="nb-label text-left" for="kode">Kode kelas</label>
+            <label class="nb-label text-left" for="kode">Kode akses</label>
             <input
                 class="nb-input text-center judul"
                 style="font-size: 1.75rem; letter-spacing: .1em"
@@ -75,7 +75,22 @@
                 <p class="nb-error text-left">{{ $galat }}</p>
             @endif
 
-            <button class="nb-btn w-full" style="font-size: 1.1rem">Masuk</button>
+            <button class="nb-btn w-full" style="font-size: 1.1rem">Buka dashboard kelas</button>
         </form>
+
+        @if (Route::has('cbt.masuk'))
+            <div class="mt-8 muncul" style="animation-delay: 240ms">
+                <p class="mb-2 text-sm">Mau mengerjakan ujian?</p>
+                <a class="nb-btn putih" href="{{ route('cbt.masuk') }}">Masuk ujian (CBT)</a>
+            </div>
+        @endif
+
+        <p class="text-sm mt-10">
+            @auth
+                <a class="underline font-bold" href="{{ route('dashboard') }}">Ke dasbor guru</a>
+            @else
+                <a class="underline" href="{{ route('login') }}">Masuk sebagai guru</a>
+            @endauth
+        </p>
     </div>
 </x-siswa-layout>

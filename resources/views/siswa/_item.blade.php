@@ -3,10 +3,19 @@
     $urlUnduh = route('siswa.berkas', [$kode, $item, 'unduh' => 1]);
 @endphp
 
-<div class="flex items-center gap-3 mb-3">
-    <span class="ikon-tipe">{{ $item->label() }}</span>
-    <h2 class="text-xl md:text-2xl">{{ $item->judul }}</h2>
-</div>
+@if ($tampilJudul ?? true)
+    <div class="flex items-center gap-3 mb-3">
+        <span class="ikon-tipe">{{ $item->label() }}</span>
+        <h2 class="text-xl md:text-2xl">{{ $item->judul }}</h2>
+    </div>
+@endif
+
+{{-- Teks / penjelasan: untuk jenis Teks ini adalah isinya; untuk jenis lain tampil sebagai penjelasan di atas media --}}
+@if ($item->isi_html)
+    <div class="nb-card teks-materi {{ $item->tipe === 'teks' ? '' : 'mb-5' }}">
+        {!! $item->isi_html !!}
+    </div>
+@endif
 
 @if ($item->tipe === 'file')
     @if ($item->jenis_berkas === 'pdf')
@@ -51,8 +60,4 @@
 @elseif ($item->url)
     <a class="nb-btn" href="{{ $item->url }}" target="_blank" rel="noopener noreferrer">Buka tautan</a>
     <p class="text-xs mt-2 break-all">{{ $item->url }}</p>
-@elseif ($item->tipe === 'teks')
-    <div class="nb-card teks-materi">
-        {!! \Illuminate\Support\Str::markdown($item->isi, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}
-    </div>
 @endif

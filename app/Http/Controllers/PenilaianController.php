@@ -19,7 +19,7 @@ class PenilaianController extends Controller
     public function index(Kelas $kelas)
     {
         $this->milikKelas($kelas);
-        $babs = $kelas->materiBabs()->get();
+        $babs = $kelas->materiTampil()->get();
 
         $user = auth()->user();
         $penilaians = $kelas->penilaians()
@@ -56,7 +56,7 @@ class PenilaianController extends Controller
         $rubrik = $user->rubriks()->with('kriterias')->findOrFail($data['rubrik_id']);
         $mapel = $data['mapel_id'] ? $user->mapels()->findOrFail($data['mapel_id']) : null;
         $sesi = $data['jenis'] === 'kelompok' ? $kelas->kelompokSesis()->findOrFail($data['kelompok_sesi_id']) : null;
-        $bab = $data['materi_bab_id']	?	$kelas->materiBabs()->findOrFail($data['materi_bab_id']) : null;
+        $bab = $data['materi_bab_id'] ? $kelas->materiTampil()->findOrFail($data['materi_bab_id']) : null;
 
         $penilaian = DB::transaction(function () use ($kelas, $data, $rubrik, $mapel, $sesi, $bab) {
             $penilaian = $kelas->penilaians()->create([
