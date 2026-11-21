@@ -34,6 +34,14 @@
             </select>
         </div>
 
+        <div class="md:col-span-4">
+            <x-pilih-warna />
+            <p class="text-sm mt-1">Tidak memilih? Warna diberikan otomatis.</p>
+            @error('warna')
+                <p class="nb-error">{{ $message }}</p>
+            @enderror
+        </div>
+
         <button class="nb-btn md:col-span-4">+ Tambah Kelas</button>
     </form>
 
@@ -42,7 +50,7 @@
             @php
                 $warna = ['var(--kuning)', 'var(--biru)', 'var(--pink)', 'var(--hijau)', 'var(--oranye)'][$loop->index % 5];
             @endphp
-            <a href="{{ route('kelas.show', $k) }}" class="nb-card hover muncul block" style="background: {{ $warna }}; animation-delay: {{ $loop->index * 60 }}ms">
+            <a href="{{ route('kelas.show', $k) }}" class="nb-card hover muncul block" style="background: {{ $k->warna_hex }}; animation-delay: {{ $loop->index * 60 }}ms">
                 <h2 class="text-2xl">{{ $k->nama }}</h2>
                 <p>{{ $k->tahun_ajaran }} &middot; Semester {{ $k->semester }}</p>
                 <p class="mt-3 font-bold">{{ $k->siswas_count }} siswa</p>

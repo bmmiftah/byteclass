@@ -11,6 +11,7 @@ use App\Services\KoreksiUjian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use	App\Support\SiswaSesi;
 
 class CbtController extends Controller
 {
@@ -33,16 +34,14 @@ class CbtController extends Controller
             ]);
         }
 
-        $request->session()->regenerate();
-        $request->session()->put('akun_id', $akun->id);
-        $akun->forceFill(['terakhir_masuk' => now()])->save();
+        SiswaSesi::masukkan($request,	$akun);
 
         return redirect()->route('cbt.daftar');
     }
 
     public function keluar(Request $request)
     {
-        $request->session()->forget('akun_id');
+        SiswaSesi::keluar($request);
 
         return redirect()->route('cbt.masuk');
     }

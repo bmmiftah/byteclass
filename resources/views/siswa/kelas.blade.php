@@ -1,9 +1,16 @@
 <x-siswa-layout :judul="$kelas->nama" :kelas="$kelas">
     {{-- Kepala dashboard --}}
-    <div class="nb-card mb-6 muncul" style="background: var(--kuning)">
+    <div class="nb-card mb-6 muncul" style="background: {{ $kelas->warna_hex }}">
         <p class="text-sm font-bold">Dashboard kelas</p>
         <h1 class="text-3xl md:text-4xl">{{ $kelas->nama }}</h1>
         <p class="mt-1">{{ $kelas->tahun_ajaran }} &middot; Semester {{ $kelas->semester }}</p>
+        <div class="mt-4">
+            @if (session('akun_id'))
+                <a class="nb-btn putih" href="{{ route('saya.beranda') }}">Dashboard Saya</a>
+            @else
+                <a class="nb-btn putih" href="{{ route('saya.masuk') }}">Masuk ke Dashboard Saya</a>
+            @endif
+        </div>
     </div>
 
     {{-- Ringkasan --}}

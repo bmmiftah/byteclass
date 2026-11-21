@@ -35,6 +35,11 @@
                     <button class="nb-btn">Cari</button>
                 </form>
             @endif
+            @if (session('akun_id'))
+                <a class="nb-btn putih" href="{{ route('saya.beranda') }}">Dashboard Saya</a>
+            @elseif (! request()->routeIs('saya.masuk'))
+                <a class="nb-btn putih" href="{{ route('saya.masuk') }}">Masuk</a>
+            @endif
         </div>
     </header>
 

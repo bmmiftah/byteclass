@@ -78,6 +78,11 @@
             <button class="nb-btn w-full" style="font-size: 1.1rem">Buka dashboard kelas</button>
         </form>
 
+        <div class="mt-8 muncul" style="animation-delay: 200ms">
+            <p class="mb-2 text-sm">Sudah punya Kode Masuk?</p>
+            <a class="nb-btn" href="{{ route('saya.masuk') }}">Masuk ke Dashboard Saya</a>
+        </div>
+
         @if (Route::has('cbt.masuk'))
             <div class="mt-8 muncul" style="animation-delay: 240ms">
                 <p class="mb-2 text-sm">Mau mengerjakan ujian?</p>

@@ -14,6 +14,12 @@
         </form>
     </div>
 
+    <form method="POST" action="{{ route('kelas.warna', $kelas) }}" class="nb-card mb-6 flex flex-wrap items-end gap-4">
+        @csrf
+        <x-pilih-warna :terpilih="$kelas->warna" />
+        <button class="nb-btn">Simpan warna</button>
+    </form>
+
     <!-- Button Materi -->
     <a	href="{{ route('materi.index', $kelas) }}"	class="nb-btn kuning mb-6">Materi</a>
 

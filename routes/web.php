@@ -144,6 +144,7 @@ Route::middleware(['auth', 'aktif', 'milik']) ->group(function () {
     Route::get('kelas/{kelas}/akun', [AkunSiswaController::class, 'index'])->name('akun.index');
     Route::post('kelas/{kelas}/akun', [AkunSiswaController::class, 'buat'])->name('akun.buat');
     Route::get('kelas/{kelas}/akun/kartu', [AkunSiswaController::class, 'kartu'])->name('akun.kartu');
+    Route::get('kelas/{kelas}/akun/kode-masuk', [AkunSiswaController::class, 'kodeMasuk'])->name('akun.kodemasuk');
     Route::post('siswa/{siswa}/akun/reset', [AkunSiswaController::class, 'reset'])->name('akun.reset');
 
     Route::resource('soal', SoalController::class)->except(['show']);
@@ -165,6 +166,9 @@ Route::middleware(['auth', 'aktif', 'milik']) ->group(function () {
     Route::post('ujian/{ujian}/koreksi/{pengerjaan}', [UjianController::class, 'simpanKoreksi'])
         ->name('ujian.simpanKoreksi');
     Route::post('ujian/{ujian}/kirim-nilai', [UjianController::class, 'kirimNilai'])->name('ujian.kirimNilai');
+
+    // Warna Kelas
+    Route::post('kelas/{kelas}/warna', [KelasController::class, 'warna'])->name('kelas.warna');
 
 });
 
@@ -253,6 +257,19 @@ Route::middleware(['auth', 'aktif', 'admin'])->group(function () {
     Route::post('backup', [BackupController::class, 'buat'])->name('backup.buat');
     Route::get('backup/{nama}', [BackupController::class, 'unduh'])->name('backup.unduh');
     Route::delete('backup/{nama}', [BackupController::class, 'hapus'])->name('backup.hapus');
+});
+
+/* ===== Fase 8A: Dashboard Saya ===== */
+Route::prefix('saya')->group(function () {
+    Route::get('masuk', [\App\Http\Controllers\SayaController::class, 'masukForm'])->name('saya.masuk');
+    Route::post('masuk', [\App\Http\Controllers\SayaController::class, 'masuk'])
+        ->middleware('throttle:60,1')
+        ->name('saya.proses');
+
+    Route::middleware(\App\Http\Middleware\SiswaMasuk::class)->group(function () {
+        Route::get('/', [\App\Http\Controllers\SayaController::class, 'beranda'])->name('saya.beranda');
+        Route::post('keluar', [\App\Http\Controllers\SayaController::class, 'keluar'])->name('saya.keluar');
+    });
 });
 
 require __DIR__ . '/auth.php';

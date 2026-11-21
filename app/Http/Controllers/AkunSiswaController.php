@@ -48,26 +48,44 @@ class AkunSiswaController extends Controller
     {
         $this->milik($siswa->kelas);
 
-        AkunSiswa::updateOrCreate(
-            ['siswa_id' => $siswa->id],
-            ['kode' => AkunSiswa::kodeBaru()]
-        );
+        AkunSiswa::firstOrNew(['siswa_id' => $siswa->id])
+            ->forceFill([
+                'kode'        => AkunSiswa::kodeBaru(),
+                'ingat_token' => null, // Ingatan "HP ini" ikut dibatalkan
+            ])
+            ->save();
 
-        return back()->with('ok', 'Kode '.$siswa->nama.' diganti. Cetak ulang kartunya.');
+        return back()->with('ok', 'Kode ' . $siswa->nama . ' diganti. Unduh atau cetak ulang kartunya.');
     }
 
-    public function kartu(Kelas $kelas)
+    // Kartu "Kode Masuk" digital (PNG) untuk satu kelas
+    public function kodeMasuk(Kelas $kelas)
     {
         $this->milik($kelas);
 
         $siswas = $kelas->siswas()
             ->where('aktif', true)
-            ->has('akun')
             ->with('akun')
             ->orderBy('nama')
             ->get();
 
-        return view('akun.kartu', compact('kelas', 'siswas'));
+        $situs = preg_replace('#^https?://#', '', rtrim(url('/'), '/'));
+
+        $kartu = $siswas
+            ->filter(fn ($s) => $s->akun)
+            ->map(fn ($s) => [
+                'nama'        => $s->nama,
+                'kelas'       => $kelas->nama,
+                'warna'       => $kelas->warna,
+                'situs'       => $situs,
+                'kodeKelas'   => $kelas->kode_tampil,
+                'kodePribadi' => $s->akun->kode_tampil,
+            ])
+            ->values();
+
+        $tanpaKode = $siswas->count() - $kartu->count();
+
+        return view('akun.kode-masuk', compact('kelas', 'kartu', 'tanpaKode'));
     }
 
     private function milik(Kelas $kelas): void

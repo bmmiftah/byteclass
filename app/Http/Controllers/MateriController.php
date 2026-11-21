@@ -44,7 +44,7 @@ class MateriController extends Controller
     public function kodeBaru(Kelas $kelas)
     {
         $this->milikKelas($kelas);
-        $kelas->forceFill(['kode_publik' => Str::lower(Str::random(8))])->save();
+        $kelas->forceFill(['kode_publik' => Kelas::kodeBaru()])->save();
 
         return back()->with('ok', 'Kode kelas diganti. Link dan QR lama tidak berlaku lagi.');
     }

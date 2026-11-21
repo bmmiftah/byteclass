@@ -17,9 +17,9 @@
             <button class="nb-btn">Buat kode untuk yang belum punya</button>
         </form>
 
-        <a class="nb-btn kuning" href="{{ route('akun.kartu', $kelas) }}" target="_blank">
-            Cetak kartu login
-        </a>
+        <a class="nb-btn kuning" href="{{ route('akun.kartu', $kelas) }}" target="_blank">Cetak kartu login</a>
+
+        <a class="nb-btn biru" href="{{ route('akun.kodemasuk', $kelas) }}">Kode Masuk (PNG)</a>
     </div>
 
     <p class="mb-3 text-sm">
