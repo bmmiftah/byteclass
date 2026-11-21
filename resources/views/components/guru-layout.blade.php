@@ -14,15 +14,21 @@
 <body>
     @php
         $menu = [
-            ['Kelas', 'kelas.index', ['kelas.*', 'denah.*', 'kelompok.*', 'penilaian.*', 'materi.*']],
-            ['Rubrik', 'rubrik.index', ['rubrik.*']],
+            ['Kelas', 'kelas.index', ['kelas.*', 'denah.*', 'kelompok.*', 'penilaian.*', 'materi.*', 'presensi.*', 'alat.*', 'catatan.*', 'akun.*', 'ujian.*']],
+            ['Pustaka', 'pustaka.index', ['pustaka.*', 'rubrik.*']],
             ['Mapel', 'mapel.index', ['mapel.*']],
+            ['Soal', 'soal.index', ['soal.*']],
+            ['Jurnal', 'jurnal.index', ['jurnal.*']],
         ];
+
+        if (auth()->user()->adalahAdmin()) {
+            $menu[] = ['Admin', 'admin.guru.index', ['admin.*', 'backup.*']];
+        }
     @endphp
 
     <div class="md:flex min-h-screen">
         {{-- Sidebar: tablet & desktop --}}
-        <aside class="hidden md:flex md:flex-col md:w-60 shrink-0 nb-side p-4 gap-2">
+        <aside class="hidden md:flex md:flex-col md:w-60 shrink-0 nb-side p-4 gap-2 print:hidden">
             <div class="judul text-2xl mb-4">Asisten<br>Guru</div>
             @foreach ($menu as [$nama, $rute, $pola])
                 <a href="{{ route($rute) }}" class="nb-link {{ request()->routeIs(...$pola) ? 'aktif' : '' }}">{{ $nama }}</a>
@@ -34,13 +40,13 @@
         </aside>
 
         {{-- Konten --}}
-        <main class="flex-1 p-4 md:p-8 pb-28 md:pb-8 max-w-6xl w-full">
+        <main class="flex-1 p-4 md:p-8 pb-28 md:pb-8 max-w-6xl w-full print:max-w-none print:p-0">
             {{ $slot }}
         </main>
     </div>
 
     {{-- Menu bawah: HP --}}
-    <nav class="md:hidden fixed bottom-0 inset-x-0 bg-white nb-bottom flex justify-around p-2 gap-2">
+    <nav class="md:hidden fixed bottom-0 inset-x-0 bg-white nb-bottom flex justify-around p-2 gap-2 print:hidden">
         @foreach ($menu as [$nama, $rute, $pola])
             <a href="{{ route($rute) }}" class="nb-link flex-1 justify-center {{ request()->routeIs(...$pola) ? 'aktif' : '' }}">{{ $nama }}</a>
         @endforeach

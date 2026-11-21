@@ -44,12 +44,20 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'aktif' => 'boolean',
+            'harus_ganti_password' => 'boolean',
+            'terakhir_masuk' => 'datetime',
         ];
     }
 
         public function kelas()
     {
         return $this->hasMany(Kelas::class, 'guru_id');
+    }
+
+    public function adalahAdmin(): bool
+    {
+        return $this->peran === 'admin';
     }
 
     public function mapels()

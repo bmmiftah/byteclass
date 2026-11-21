@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use	Illuminate\Support\Str;
+use	App\Models\Concerns\MilikGuru;
 
 class Kelas extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, MilikGuru;
 
     protected $table = 'kelas';
 
@@ -67,6 +68,12 @@ class Kelas extends Model
             })
             ->orderBy('urutan')
             ->orderBy('id');
+    }
+
+    // CBT
+    public function ujians()
+    {
+        return $this->hasMany(Ujian::class)->latest();
     }
 
 }

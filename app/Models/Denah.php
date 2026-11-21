@@ -5,10 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use	App\Models\Concerns\MilikGuru;
 
 class Denah extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, MilikGuru;
+
+    protected string $pemilikVia = 'kelas';
 
     protected $fillable = [
         'kelas_id',
@@ -48,4 +51,5 @@ class Denah extends Model
     {
         return $this->hasMany(DenahRiwayat::class);
     }
+
 }

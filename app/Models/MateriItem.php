@@ -4,9 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use	App\Models\Concerns\MilikGuru;
 
 class MateriItem extends Model
 {
+    use MilikGuru;
+
+    protected string $pemilikVia = 'bab.kelas';
+    
     protected $fillable = [
         'bab_id',
         'tipe',

@@ -9,7 +9,11 @@ class KelasController extends Controller
 {
     public function index()
     {
-        $kelas = auth()->user()->kelas()->withCount('siswas')->latest()->get();
+        $kelas = auth()->user()->kelas()
+            ->where('arsip', false)
+            ->withCount('siswas')
+            ->latest()
+            ->get();
 
         return view('kelas.index', compact('kelas'));
     }
@@ -49,5 +53,28 @@ class KelasController extends Controller
     private function milik(Kelas $kelas): void
     {
         abort_unless($kelas->guru_id === auth()->id(), 403);
+    }
+
+    // Arsip Tahun Ajaran
+    public function arsip()
+    {
+        $kelas = auth()->user()->kelas()
+            ->where('arsip', true)
+            ->withCount('siswas')
+            ->latest()
+            ->get();
+
+        return view('kelas.arsip', compact('kelas'));
+    }
+
+    public function arsipkan(Kelas $kelas)
+    {
+        abort_unless($kelas->guru_id === auth()->id(), 403);
+
+        $kelas->forceFill(['arsip' => ! $kelas->arsip])->save();
+
+        return redirect()
+            ->route($kelas->arsip ? 'kelas.index' : 'kelas.arsip')
+            ->with('ok', $kelas->arsip ? 'Kelas diarsipkan.' : 'Kelas dipulihkan.');
     }
 }

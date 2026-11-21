@@ -15,19 +15,34 @@
     </div>
 
     <!-- Button Materi -->
-     <a	href="{{ route('materi.index', $kelas) }}"	class="nb-btn kuning mb-6">Materi</a>
+    <a	href="{{ route('materi.index', $kelas) }}"	class="nb-btn kuning mb-6">Materi</a>
+
+    <!-- Button Presensi -->
+    <a	href="{{ route('presensi.index',	$kelas)	}}"	class="nb-btn pink mb-6">Presensi</a>
 
     <!-- Button Tempat Duduk -->
     <a href="{{ route('denah.index', $kelas) }}"	class="nb-btn biru mb-6">Denah Tempat Duduk</a>
 
     <!-- Button Bagi kelompok -->
-    <a href="{{ route('kelompok.index',	$kelas) }}" class="nb-btn pink mb-6">Kelompok</a>
+    <a href="{{ route('kelompok.index',	$kelas) }}" class="nb-btn hijau mb-6">Kelompok</a>
+
+    <!-- Button Alat Kelas -->
+    <a href="{{ route('alat.index', $kelas) }}" class="nb-btn merah mb-6">Alat Kelas</a>
+
+    <!-- Button Catatan -->
+    <a href="{{ route('catatan.index', $kelas) }}" class="nb-btn pink mb-6">Catatan</a>
 
     <!-- Button Penilaian -->
     <a href="{{ route('penilaian.index', $kelas) }}" class="nb-btn mb-6">Penilaian</a>
 
     <!-- Button Rekap Nilai -->
-     <a href="{{ route('penilaian.rekapKelas', $kelas) }}" class="nb-btn putih mb-6">Rekap Nilai</a>
+    <a href="{{ route('penilaian.rekapKelas', $kelas) }}" class="nb-btn putih mb-6">Rekap Nilai</a>
+
+    <!-- Button Kode Siswa -->
+    <a href="{{ route('akun.index', $kelas) }}" class="nb-btn biru mb-6">Kode Siswa</a>
+
+    <!-- Button Ujian CBT -->
+    <a href="{{ route('ujian.index', $kelas) }}" class="nb-btn pink mb-6">Ujian CBT</a>
 
     @if (session('ok'))
         <div class="nb-card mb-4" style="background: var(--hijau)">{{ session('ok') }}</div>
@@ -71,6 +86,12 @@
         </div>
 
         <button class="nb-btn putih">Impor</button>
+    </form>
+
+    <!-- Button Arsip -->
+     <form method="POST" action="{{ route('kelas.arsipkan', $kelas) }}" class="inline"  onsubmit="return confirm('Arsipkan kelas ini? Data tetap tersimpan dan bisa dipulihkan.')">
+        @csrf
+        <button class="nb-btn putih mb-6">Arsipkan kelas</button>
     </form>
     
     <div class="nb-card nb-scroll">

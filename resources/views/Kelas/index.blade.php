@@ -1,11 +1,13 @@
 <x-guru-layout judul="Kelas">
     <h1 class="text-3xl mb-6">Kelas Saya</h1>
+    <!-- Button Arsip -->
+     <a href="{{ route('kelas.arsip') }}" class="font-bold underline">Lihat arsip</a>
 
     @if (session('ok'))
         <div class="nb-card mb-4" style="background: var(--hijau)">{{ session('ok') }}</div>
     @endif
 
-    <form method="POST" action="{{ route('kelas.store') }}" class="nb-card mb-8 grid gap-4 md:grid-cols-4 items-end">
+    <form method="POST" action="{{ route('kelas.store') }}" class="nb-card my-8 grid gap-4 md:grid-cols-4 items-end">
         @csrf
 
         <div class="md:col-span-2">

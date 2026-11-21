@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use	App\Models\Concerns\MilikGuru;
 
 class Penilaian extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, MilikGuru;
+
+    protected string $pemilikVia = 'kelas';
 
     protected $fillable = [
         'kelas_id',

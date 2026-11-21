@@ -11,8 +11,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
-    })
+    $middleware->alias([
+        'aktif' => \App\Http\Middleware\AkunAktif::class,
+        'admin' => \App\Http\Middleware\HanyaAdmin::class,
+        'milik' => \App\Http\Middleware\PastikanMilik::class,
+    ]);
+
+    // 'milik' harus berjalan SETELAH alamat diubah menjadi model (SubstituteBindings)
+    $middleware->appendToPriorityList(
+        after: \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        append: \App\Http\Middleware\PastikanMilik::class,
+    );
+})
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
