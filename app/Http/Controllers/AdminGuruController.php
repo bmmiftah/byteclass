@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Undangan;
 use App\Models\User;
+use App\Services\PenyimpananTugas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -34,31 +35,49 @@ class AdminGuruController extends Controller
             ->selectRaw('kelas.guru_id as guru_id, coalesce(sum(materi_items.ukuran), 0) as byte')
             ->pluck('byte', 'guru_id');
 
+        // File tugas siswa per guru (byte), dijumlahkan dengan materi di tampilan
+        $pakaiTugasPerGuru = DB::table('tugas_berkas')
+            ->join('tugas_pengumpulans', 'tugas_pengumpulans.id', '=', 'tugas_berkas.pengumpulan_id')
+            ->join('tugas', 'tugas.id', '=', 'tugas_pengumpulans.tugas_id')
+            ->join('kelas', 'kelas.id', '=', 'tugas.kelas_id')
+            ->whereNotNull('tugas_berkas.path')
+            ->groupBy('kelas.guru_id')
+            ->selectRaw('kelas.guru_id as guru_id, coalesce(sum(tugas_berkas.ukuran), 0) as byte')
+            ->pluck('byte', 'guru_id');
+
+        $totalByte = PenyimpananTugas::totalByte();
+        $kuotaByte = PenyimpananTugas::kuotaByte();
+
         $undangans = Undangan::whereNull('dipakai_pada')
             ->where('berlaku_sampai', '>', now())
             ->latest()
             ->get();
 
-        return view('admin.guru.index', compact('gurus', 'siswaPerGuru', 'pakaiPerGuru', 'undangans'));
+        return view('admin.guru.index', compact(
+            'gurus',
+            'siswaPerGuru',
+            'pakaiPerGuru',
+            'pakaiTugasPerGuru',
+            'totalByte',
+            'kuotaByte',
+            'undangans'
+        ));
     }
 
     public function undang(Request $request)
     {
-        $data = $request->validate(
-            [
-                'email' => 'nullable|email|max:150|unique:users,email',
-                'hari' => 'required|integer|min:1|max:30',
-                'peran' => 'required|in:guru,admin',
-            ],
-            [
-                'email.unique' => 'Email itu sudah terdaftar sebagai guru.',
-            ]
-        );
+        $data = $request->validate([
+            'email' => 'nullable|email|max:150|unique:users,email',
+            'hari'  => 'required|integer|min:1|max:30',
+            'peran' => 'required|in:guru,admin',
+        ], [
+            'email.unique' => 'Email itu sudah terdaftar sebagai guru.',
+        ]);
 
         $undangan = Undangan::create([
-            'email' => $data['email'] ?? null,
-            'peran' => $data['peran'],
-            'dibuat_oleh' => $request->user()->id,
+            'email'          => $data['email'] ?? null,
+            'peran'          => $data['peran'],
+            'dibuat_oleh'    => $request->user()->id,
             'berlaku_sampai' => now()->addDays((int) $data['hari']),
         ]);
 
@@ -79,11 +98,10 @@ class AdminGuruController extends Controller
         $user->aktif = ! $user->aktif;
         $user->save();
 
-        $pesan = $user->aktif
-            ? ' diaktifkan kembali.'
-            : ' dinonaktifkan. Datanya tetap tersimpan.';
-
-        return back()->with('ok', $user->name . $pesan);
+        return back()->with(
+            'ok',
+            $user->name . ($user->aktif ? ' diaktifkan kembali.' : ' dinonaktifkan. Datanya tetap tersimpan.')
+        );
     }
 
     public function ubahPeran(Request $request, User $user)
@@ -106,7 +124,7 @@ class AdminGuruController extends Controller
         $user->save();
 
         return back()->with('sandi_sementara', [
-            'nama' => $user->name,
+            'nama'  => $user->name,
             'email' => $user->email,
             'sandi' => $sementara,
         ]);

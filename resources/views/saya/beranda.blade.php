@@ -25,11 +25,17 @@
             <p class="font-bold">Ujian yang dibuka</p>
         </a>
 
-        <div class="nb-card muncul" style="background: #fff; animation-delay: 180ms">
-            <p class="judul text-4xl">&hellip;</p>
-            <p class="font-bold">Tugas &amp; agenda</p>
-            <p class="text-sm">Segera hadir.</p>
-        </div>
+        <a
+            href="{{ route('saya.tugas') }}"
+            class="nb-card hover muncul block"
+            style="background: var(--kuning); animation-delay: 180ms"
+        >
+            <p class="judul text-4xl">{{ $tugasPerlu->count() }}</p>
+            <p class="font-bold">Tugas yang perlu dikerjakan</p>
+            @if ($tugasPerlu->isNotEmpty())
+                <p class="text-sm">Terdekat: {{ $tugasPerlu->first()->judul }} ({{ $tugasPerlu->first()->sisaWaktu() }})</p>
+            @endif
+        </a>
     </div>
 
     <form method="POST" action="{{ route('saya.keluar') }}">

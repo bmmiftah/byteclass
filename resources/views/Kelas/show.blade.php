@@ -50,6 +50,9 @@
     <!-- Button Ujian CBT -->
     <a href="{{ route('ujian.index', $kelas) }}" class="nb-btn pink mb-6">Ujian CBT</a>
 
+    <!-- Button Tugas -->
+    <a href="{{ route('tugas.index', $kelas) }}" class="nb-btn hijau mb-6">Tugas</a>
+
     @if (session('ok'))
         <div class="nb-card mb-4" style="background: var(--hijau)">{{ session('ok') }}</div>
     @endif

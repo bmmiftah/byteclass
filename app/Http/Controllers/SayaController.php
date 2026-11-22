@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\AkunSiswa;
+use App\Models\Tugas;
+use App\Models\TugasPengumpulan;
 use App\Models\Ujian;
 use App\Support\SiswaSesi;
 use Illuminate\Http\Request;
@@ -41,11 +43,28 @@ class SayaController extends Controller
         $akun = $request->attributes->get('akun');
         $siswa = $akun->siswa;
         $kelas = $siswa->kelas;
+
         $ujianBuka = Ujian::where('kelas_id', $kelas->id)
             ->where('status', 'buka')
             ->count();
 
-        return view('saya.beranda', compact('akun', 'siswa', 'kelas', 'ujianBuka'));
+        // Tugas yang masih bisa dikerjakan siswa ini, tenggat terdekat dulu
+        $terbit = Tugas::terlihat()
+            ->where('kelas_id', $kelas->id)
+            ->where('status', 'terbit')
+            ->orderBy('tenggat')
+            ->get();
+
+        $sudah = TugasPengumpulan::where('siswa_id', $siswa->id)
+            ->whereIn('tugas_id', $terbit->pluck('id'))
+            ->pluck('tugas_id');
+
+        $tugasPerlu = $terbit
+            ->reject(fn ($t) => $sudah->contains($t->id))
+            ->filter(fn ($t) => $t->bolehKumpul())
+            ->values();
+
+        return view('saya.beranda', compact('akun', 'siswa', 'kelas', 'ujianBuka', 'tugasPerlu'));
     }
 
     public function keluar(Request $request)

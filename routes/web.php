@@ -170,6 +170,57 @@ Route::middleware(['auth', 'aktif', 'milik']) ->group(function () {
     // Warna Kelas
     Route::post('kelas/{kelas}/warna', [KelasController::class, 'warna'])->name('kelas.warna');
 
+    /* ===== Fase 8B: Tugas ===== */
+
+    // Sisi guru (butuh login guru + penjaga isolasi 'milik')
+    Route::middleware(['auth', 'aktif', 'milik'])->group(function () {
+        Route::get('kelas/{kelas}/tugas', [\App\Http\Controllers\TugasController::class, 'index'])
+            ->name('tugas.index');
+        Route::get('kelas/{kelas}/tugas/baru', [\App\Http\Controllers\TugasController::class, 'create'])
+            ->name('tugas.create');
+        Route::post('kelas/{kelas}/tugas', [\App\Http\Controllers\TugasController::class, 'store'])
+            ->name('tugas.store');
+        Route::post('tugas/pengaturan', [\App\Http\Controllers\TugasController::class, 'pengaturan'])
+            ->middleware('throttle:10,1')
+            ->name('tugas.pengaturan');
+
+        Route::get('tugas/{tugas}', [\App\Http\Controllers\TugasController::class, 'hasil'])
+            ->name('tugas.hasil');
+        Route::get('tugas/{tugas}/ubah', [\App\Http\Controllers\TugasController::class, 'edit'])
+            ->name('tugas.edit');
+        Route::put('tugas/{tugas}', [\App\Http\Controllers\TugasController::class, 'update'])
+            ->name('tugas.update');
+
+        Route::post('tugas/{tugas}/terbit', [\App\Http\Controllers\TugasController::class, 'terbit'])
+            ->name('tugas.terbit');
+        Route::post('tugas/{tugas}/tarik', [\App\Http\Controllers\TugasController::class, 'tarik'])
+            ->name('tugas.tarik');
+        Route::post('tugas/{tugas}/arsip', [\App\Http\Controllers\TugasController::class, 'arsip'])
+            ->name('tugas.arsip');
+        Route::post('tugas/{tugas}/buka-arsip', [\App\Http\Controllers\TugasController::class, 'bukaArsip'])
+            ->name('tugas.bukaArsip');
+        Route::post('tugas/{tugas}/tunda', [\App\Http\Controllers\TugasController::class, 'tunda'])
+            ->name('tugas.tunda');
+
+        Route::get('tugas/{tugas}/zip', [\App\Http\Controllers\TugasController::class, 'zip'])
+            ->name('tugas.zip');
+        Route::post('tugas/{tugas}/bersihkan', [\App\Http\Controllers\TugasController::class, 'bersihkan'])
+            ->middleware('throttle:10,1')
+            ->name('tugas.bersihkan');
+        Route::delete('tugas/{tugas}', [\App\Http\Controllers\TugasController::class, 'destroy'])
+            ->middleware('throttle:10,1')
+            ->name('tugas.destroy');
+
+        Route::post('tugas/{tugas}/kirim-nilai', [\App\Http\Controllers\TugasController::class, 'kirimNilai'])
+            ->name('tugas.kirimNilai');
+        Route::post('tugas/{tugas}/tandai/{siswa}', [\App\Http\Controllers\TugasController::class, 'tandai'])
+            ->name('tugas.tandai');
+        Route::post('tugas-kumpul/{pengumpulan}/nilai', [\App\Http\Controllers\TugasController::class, 'nilai'])
+            ->name('tugas.nilai');
+        Route::get('tugas-berkas/{berkas}', [\App\Http\Controllers\TugasController::class, 'berkas'])
+            ->name('tugas.berkas');
+    });
+
 });
 
 // ============== Route Siswa ==================== //
@@ -270,6 +321,23 @@ Route::prefix('saya')->group(function () {
         Route::get('/', [\App\Http\Controllers\SayaController::class, 'beranda'])->name('saya.beranda');
         Route::post('keluar', [\App\Http\Controllers\SayaController::class, 'keluar'])->name('saya.keluar');
     });
+});
+
+/* ===== Fase 8B: Tugas ===== */
+// Sisi siswa (di bawah /saya, butuh masuk dengan kode pribadi)
+Route::prefix('saya')->middleware(\App\Http\Middleware\SiswaMasuk::class)->group(function () {
+    Route::get('tugas', [\App\Http\Controllers\SayaTugasController::class, 'index'])
+        ->name('saya.tugas');
+    Route::get('tugas/{tugas}', [\App\Http\Controllers\SayaTugasController::class, 'show'])
+        ->whereNumber('tugas')
+        ->name('saya.tugas.show');
+    Route::post('tugas/{tugas}', [\App\Http\Controllers\SayaTugasController::class, 'kumpul'])
+        ->whereNumber('tugas')
+        ->middleware('throttle:30,1')
+        ->name('saya.tugas.kumpul');
+    Route::get('tugas/{tugas}/berkas/{berkas}', [\App\Http\Controllers\SayaTugasController::class, 'berkas'])
+        ->whereNumber(['tugas', 'berkas'])
+        ->name('saya.tugas.berkas');
 });
 
 require __DIR__ . '/auth.php';
