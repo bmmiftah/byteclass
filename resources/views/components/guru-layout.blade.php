@@ -14,7 +14,7 @@
 <body>
     @php
         $menu = [
-            ['Kelas', 'kelas.index', ['kelas.*', 'denah.*', 'kelompok.*', 'penilaian.*', 'materi.*', 'presensi.*', 'alat.*', 'catatan.*', 'akun.*', 'ujian.*']],
+            ['Beranda',	'dashboard',	['dashboard']], ['Kelas', 'kelas.index', ['kelas.*', 'denah.*', 'kelompok.*', 'penilaian.*', 'materi.*', 'presensi.*', 'alat.*', 'catatan.*', 'akun.*', 'ujian.*']],
             ['Pustaka', 'pustaka.index', ['pustaka.*', 'rubrik.*']],
             ['Mapel', 'mapel.index', ['mapel.*']],
             ['Soal', 'soal.index', ['soal.*']],

@@ -53,6 +53,15 @@
     <!-- Button Tugas -->
     <a href="{{ route('tugas.index', $kelas) }}" class="nb-btn hijau mb-6">Tugas</a>
 
+    <!-- Button Leger Nilai -->
+     <a href="{{ route('leger.index', $kelas) }}" class="nb-btn merah mb-6">Leger Nilai</a>
+
+    <!-- Button Pengumuman -->
+    <a href="{{ route('pengumuman.index', $kelas) }}" class="nb-btn biru mb-6">Pengumuman</a>
+
+    <!-- Button Agenda -->
+    <a href="{{ route('agenda.index', $kelas) }}" class="nb-btn pink mb-6">Agenda</a>
+
     @if (session('ok'))
         <div class="nb-card mb-4" style="background: var(--hijau)">{{ session('ok') }}</div>
     @endif

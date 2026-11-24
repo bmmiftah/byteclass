@@ -25,6 +25,7 @@ class Ujian extends Model
         'acak_opsi',
         'tampil_nilai',
         'status',
+        'remedial_dari_id',
     ];
 
     protected $casts = [
@@ -115,4 +116,58 @@ class Ujian extends Model
 
         return [$ids, $opsi];
     }
+
+    /* ---------- Fase 9B: remedial dan peserta terbatas ---------- */
+
+    public function asal()
+    {
+        return $this->belongsTo(Ujian::class, 'remedial_dari_id');
+    }
+
+    public function remedials()
+    {
+        return $this->hasMany(Ujian::class, 'remedial_dari_id')->orderBy('id');
+    }
+
+    public function pesertas()
+    {
+        return $this->belongsToMany(Siswa::class, 'ujian_pesertas', 'ujian_id', 'siswa_id');
+    }
+
+    public function isRemedial(): bool
+    {
+        return $this->remedial_dari_id !== null;
+    }
+
+    // Siswa ini boleh melihat dan mengerjakan? (tanpa daftar peserta = seluruh kelas)
+    public function bisaDiikuti(int $siswaId): bool
+    {
+        return ! $this->pesertas()->exists() || $this->pesertas()->where('siswas.id', $siswaId)->exists();
+    }
+
+    // Ujian yang boleh dilihat siswa ini; null = tanpa filter (tampilan guru)
+    public function scopeUntukSiswa($q, ?int $siswaId)
+    {
+        if ($siswaId === null) {
+            return $q;
+        }
+
+        return $q->where(function ($w) use ($siswaId) {
+            $w->whereDoesntHave('pesertas')
+                ->orWhereHas('pesertas', fn ($p) => $p->where('siswas.id', $siswaId));
+        });
+    }
+
+    // Siswa aktif yang menjadi sasaran ujian ini (peserta terbatas, atau seluruh kelas)
+    public function siswaPeserta()
+    {
+        $q = $this->kelas->siswas()->where('aktif', true);
+
+        if ($this->pesertas()->exists()) {
+            $q->whereIn('id', $this->pesertas()->select('siswas.id'));
+        }
+
+        return $q;
+    }
+
 }

@@ -206,7 +206,7 @@ class UjianController extends Controller
         KoreksiUjian::rapikanKedaluwarsa($ujian);
 
         $total = $ujian->soals()->count();
-        $siswas = $ujian->kelas->siswas()->where('aktif', true)->orderBy('nama')->get();
+        $siswas = $ujian->siswaPeserta()->orderBy('nama')->get();
         $ps = $ujian->pengerjaans()
             ->withCount(['jawabans as terisi' => fn ($q) => $q->whereNotNull('jawaban')])
             ->get()
@@ -263,7 +263,7 @@ class UjianController extends Controller
         KoreksiUjian::rapikanKedaluwarsa($ujian);
 
         $total = $ujian->soals()->count();
-        $siswas = $ujian->kelas->siswas()->where('aktif', true)->orderBy('nama')->get();
+        $siswas = $ujian->siswaPeserta()->orderBy('nama')->get();
         $ps = $ujian->pengerjaans()
             ->withCount(['jawabans as benar_count' => fn ($q) => $q->where('benar', true)])
             ->get()
@@ -351,6 +351,10 @@ class UjianController extends Controller
     public function kirimNilai(Ujian $ujian)
     {
         $this->milik($ujian);
+
+        if ($ujian->isRemedial()) {
+            return back()->withErrors(['kirim' => 'Ini ujian remedial. Nilainya dipakai lewat tombol "Terapkan ke Penilaian" di halaman Analisis ujian aslinya.']);
+        }
 
         KoreksiUjian::rapikanKedaluwarsa($ujian);
 

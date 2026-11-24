@@ -97,7 +97,7 @@
                         @endif
                     </p>
                 </div>
-                <span class="nb-chip"style="background: {{ $warna }}">{{ $labelStatus }}</span>
+                <span class="nb-chip" style="background: {{ $t->warnaStatus() }}">{{ $t->labelStatus() }}</span>
             </a>
         @empty
             <div class="nb-card">

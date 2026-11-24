@@ -31,7 +31,9 @@ use	App\Http\Controllers\PustakaController;
 use	App\Http\Controllers\UndanganController;
 
 Route::middleware(['auth', 'aktif', 'milik']) ->group(function () {
-    Route::get('/dashboard', fn () => redirect()->route('kelas.index'))->name('dashboard');
+    Route::get('/', fn () => redirect()->route('dashboard'));
+    
+    Route::get('/dashboard', [\App\Http\Controllers\BerandaGuruController::class, 'index'])->name('dashboard');
 
     Route::resource('kelas', KelasController::class)
         ->only(['index', 'store', 'show', 'destroy'])
@@ -221,6 +223,36 @@ Route::middleware(['auth', 'aktif', 'milik']) ->group(function () {
             ->name('tugas.berkas');
     });
 
+    // ---- Fase 9A: leger nilai gabungan ----
+    Route::get('kelas/{kelas}/leger', [\App\Http\Controllers\LegerController::class, 'index'])
+        ->name('leger.index');
+    Route::post('kelas/{kelas}/leger', [\App\Http\Controllers\LegerController::class, 'simpan'])
+        ->name('leger.simpan');
+    Route::get('kelas/{kelas}/leger/ekspor', [\App\Http\Controllers\LegerController::class, 'ekspor'])
+        ->name('leger.ekspor');
+    Route::get('kelas/{kelas}/leger/cetak', [\App\Http\Controllers\LegerController::class, 'cetak'])
+        ->name('leger.cetak');
+        
+    // ---- Fase 9B: analisis ujian dan remedial ----
+    Route::get('ujian/{ujian}/analisis', [\App\Http\Controllers\AnalisisController::class, 'ujian'])
+        ->name('analisis.ujian');
+    Route::post('ujian/{ujian}/remedial', [\App\Http\Controllers\AnalisisController::class, 'buatRemedial'])
+        ->name('analisis.remedial');
+    Route::post('ujian/{ujian}/remedial/terapkan', [\App\Http\Controllers\AnalisisController::class, 'terapkan'])
+        ->name('analisis.terapkan');
+
+    // ---- Fase 9A-2: rekap per bab ----
+    Route::get('kelas/{kelas}/leger/bab', [\App\Http\Controllers\LegerBabController::class, 'index'])->name('leger.bab');
+    Route::get('kelas/{kelas}/leger/bab/ekspor', [\App\Http\Controllers\LegerBabController::class, 'ekspor'])->name('leger.bab.ekspor');
+    Route::get('kelas/{kelas}/leger/bab/cetak', [\App\Http\Controllers\LegerBabController::class, 'cetak'])->name('leger.bab.cetak');
+    Route::get('kelas/{kelas}/leger/struktur', [\App\Http\Controllers\LegerBabController::class, 'struktur'])->name('leger.struktur');
+    Route::post('kelas/{kelas}/leger/mode', [\App\Http\Controllers\LegerBabController::class, 'mode'])->name('leger.mode');
+    Route::post('kelas/{kelas}/leger/ptspas', [\App\Http\Controllers\LegerBabController::class, 'ptsPas'])->name('leger.ptspas');
+    Route::post('kelas/{kelas}/leger/bab', [\App\Http\Controllers\LegerBabController::class, 'babTambah'])->name('leger.bab.tambah');
+    Route::post('leger/bab/{bab}', [\App\Http\Controllers\LegerBabController::class, 'babSimpan'])->name('leger.bab.simpan');
+    Route::post('leger/bab/{bab}/hapus', [\App\Http\Controllers\LegerBabController::class, 'babHapus'])->name('leger.bab.hapus');
+    Route::post('leger/bab/{bab}/salin', [\App\Http\Controllers\LegerBabController::class, 'babSalin'])->name('leger.bab.salin');
+
 });
 
 // ============== Route Siswa ==================== //
@@ -339,5 +371,80 @@ Route::prefix('saya')->middleware(\App\Http\Middleware\SiswaMasuk::class)->group
         ->whereNumber(['tugas', 'berkas'])
         ->name('saya.tugas.berkas');
 });
+
+/* ===== Fase 8C: Pengumuman, Agenda, Kalender ===== */
+
+// Sisi guru
+Route::middleware(['auth', 'aktif', 'milik'])->group(function () {
+    Route::get('kelas/{kelas}/pengumuman', [\App\Http\Controllers\PengumumanController::class, 'index'])
+        ->name('pengumuman.index');
+    Route::get('kelas/{kelas}/pengumuman/baru', [\App\Http\Controllers\PengumumanController::class, 'create'])
+        ->name('pengumuman.create');
+    Route::post('kelas/{kelas}/pengumuman', [\App\Http\Controllers\PengumumanController::class, 'store'])
+        ->name('pengumuman.store');
+    Route::get('pengumuman/{pengumuman}/ubah', [\App\Http\Controllers\PengumumanController::class, 'edit'])
+        ->name('pengumuman.edit');
+    Route::put('pengumuman/{pengumuman}', [\App\Http\Controllers\PengumumanController::class, 'update'])
+        ->name('pengumuman.update');
+    Route::delete('pengumuman/{pengumuman}', [\App\Http\Controllers\PengumumanController::class, 'destroy'])
+        ->name('pengumuman.destroy');
+
+    Route::get('kelas/{kelas}/agenda', [\App\Http\Controllers\AgendaController::class, 'index'])
+        ->name('agenda.index');
+    Route::get('kelas/{kelas}/agenda/baru', [\App\Http\Controllers\AgendaController::class, 'create'])
+        ->name('agenda.create');
+    Route::post('kelas/{kelas}/agenda', [\App\Http\Controllers\AgendaController::class, 'store'])
+        ->name('agenda.store');
+    Route::get('agenda/{agenda}/ubah', [\App\Http\Controllers\AgendaController::class, 'edit'])
+        ->name('agenda.edit');
+    Route::put('agenda/{agenda}', [\App\Http\Controllers\AgendaController::class, 'update'])
+        ->name('agenda.update');
+    Route::delete('agenda/{agenda}', [\App\Http\Controllers\AgendaController::class, 'destroy'])
+        ->name('agenda.destroy');
+});
+
+// Sisi siswa (di bawah /saya)
+Route::prefix('saya')->middleware(\App\Http\Middleware\SiswaMasuk::class)->group(function () {
+    Route::get('kalender', [\App\Http\Controllers\SayaKalenderController::class, 'kalender'])
+        ->name('saya.kalender');
+    Route::get('agenda', [\App\Http\Controllers\SayaKalenderController::class, 'agenda'])
+        ->name('saya.agenda');
+    Route::get('pengumuman', [\App\Http\Controllers\SayaKalenderController::class, 'pengumuman'])
+        ->name('saya.pengumuman');
+});
+
+/* ===== Fase 8D: PWA, langganan kalender (.ics), pengingat ===== */
+Route::get('manifest.webmanifest', [\App\Http\Controllers\PwaController::class, 'manifest'])
+    ->name('pwa.manifest');
+
+// Tautan rahasia untuk aplikasi kalender (tanpa login; yang menjaga adalah token di alamatnya)
+Route::get('kal/{token}.ics', [\App\Http\Controllers\KalenderIcsController::class, 'feed'])
+    ->where('token', '[A-Za-z0-9]{40}')
+    ->middleware('throttle:120,1')
+    ->name('kalender.ics');
+
+Route::prefix('saya')->group(function () {
+    Route::get('sw.js', [\App\Http\Controllers\PwaController::class, 'sw'])->name('pwa.sw');
+    Route::get('offline', [\App\Http\Controllers\PwaController::class, 'offline'])->name('pwa.offline');
+
+    Route::middleware(\App\Http\Middleware\SiswaMasuk::class)->group(function () {
+        Route::post('kalender/langganan', [\App\Http\Controllers\KalenderIcsController::class, 'aktifkan'])
+            ->name('saya.kalender.langganan');
+        Route::post('kalender/langganan/ulang', [\App\Http\Controllers\KalenderIcsController::class, 'ulang'])
+            ->name('saya.kalender.langganan.ulang');
+        Route::delete('kalender/langganan', [\App\Http\Controllers\KalenderIcsController::class, 'matikan'])
+            ->name('saya.kalender.langganan.mati');
+
+        Route::post('push', [\App\Http\Controllers\SayaPushController::class, 'simpan'])
+            ->name('saya.push.simpan');
+        Route::post('push/hapus', [\App\Http\Controllers\SayaPushController::class, 'hapus'])
+            ->name('saya.push.hapus');
+        Route::post('push/uji', [\App\Http\Controllers\SayaPushController::class, 'uji'])
+            ->middleware('throttle:6,1')
+            ->name('saya.push.uji');
+    });
+});
+
+
 
 require __DIR__ . '/auth.php';

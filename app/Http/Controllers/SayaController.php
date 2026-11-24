@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\AkunSiswa;
+use App\Models\Pengumuman;
 use App\Models\Tugas;
 use App\Models\TugasPengumpulan;
 use App\Models\Ujian;
+use App\Services\KalenderKelas;
 use App\Support\SiswaSesi;
 use Illuminate\Http\Request;
 
@@ -30,7 +32,7 @@ class SayaController extends Controller
         if (! $akun || ! $akun->siswa || ! $akun->siswa->aktif) {
             return back()
                 ->withInput($request->only('kode'))
-                ->withErrors(['kode' => 'Kode tidak dikenal. Periksa lagi kode pribadimu.']);
+                ->withErrors(['kode' => 'Kode tidak dikenali. Periksa lagi kode pribadimu.']);
         }
 
         SiswaSesi::masukkan($request, $akun, $request->boolean('ingat'));
@@ -44,9 +46,7 @@ class SayaController extends Controller
         $siswa = $akun->siswa;
         $kelas = $siswa->kelas;
 
-        $ujianBuka = Ujian::where('kelas_id', $kelas->id)
-            ->where('status', 'buka')
-            ->count();
+        $ujianBuka = Ujian::untukSiswa($siswa->id)->where('kelas_id', $kelas->id)->where('status', 'buka')->count();
 
         // Tugas yang masih bisa dikerjakan siswa ini, tenggat terdekat dulu
         $terbit = Tugas::terlihat()
@@ -64,7 +64,27 @@ class SayaController extends Controller
             ->filter(fn ($t) => $t->bolehKumpul())
             ->values();
 
-        return view('saya.beranda', compact('akun', 'siswa', 'kelas', 'ujianBuka', 'tugasPerlu'));
+        // Pengumuman yang sedang tayang (sematan di atas) dan kejadian 7 hari ke depan
+        $pengumuman = Pengumuman::tayang()
+            ->where('kelas_id', $kelas->id)
+            ->urut()
+            ->limit(3)
+            ->get();
+
+        $mendatang = KalenderKelas::kejadian($kelas, today(), today()->addDays(7), $siswa)
+            ->reject(fn ($e) => $e['selesai'] === true)
+            ->take(8)
+            ->values();
+
+        return view('saya.beranda', compact(
+            'akun',
+            'siswa',
+            'kelas',
+            'ujianBuka',
+            'tugasPerlu',
+            'pengumuman',
+            'mendatang'
+        ));
     }
 
     public function keluar(Request $request)

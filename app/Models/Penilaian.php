@@ -23,6 +23,7 @@ class Penilaian extends Model
         'tanggal',
         'kkm',
         'materi_bab_id',
+        'kategori',
     ];
 
     protected $casts = [

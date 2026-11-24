@@ -51,6 +51,9 @@
             <button class="nb-btn kuning">Kirim nilai ke Penilaian</button>
         </form>
 
+        <!-- Button Analisis soal dan remedial -->
+        <a class="nb-btn putih" href="{{ route('analisis.ujian', $ujian) }}">Analisis soal dan remedial</a>
+
         @if ($ujian->penilaian_id)
             <a class="nb-btn biru" href="{{ route('penilaian.show', $ujian->penilaian_id) }}">
                 Lihat di Penilaian

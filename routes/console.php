@@ -11,3 +11,5 @@ Artisan::command('inspire', function () {
 Schedule::command('backup:jalankan	--simpan=7')->dailyAt('02:00');
 
 Schedule::command('tugas:bersihkan')->dailyAt('02:00');
+
+Schedule::command('pengingat:kirim')->everyFiveMinutes()->withoutOverlapping();

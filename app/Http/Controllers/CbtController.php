@@ -53,7 +53,8 @@ class CbtController extends Controller
         $akun = $this->akun($request);
         $siswa = $akun->siswa;
 
-        $ujians = Ujian::where('kelas_id', $siswa->kelas_id)
+        $ujians = Ujian::untukSiswa($siswa->id)
+            ->where('kelas_id', $siswa->kelas_id)
             ->whereIn('status', ['buka', 'tutup'])
             ->orderByDesc('id')
             ->get();
@@ -310,7 +311,8 @@ class CbtController extends Controller
 
     private function bolehLihat(Request $request, Ujian $ujian): void
     {
-        abort_unless($ujian->kelas_id === $this->akun($request)->siswa->kelas_id, 404);
+        $siswa = $this->akun($request)->siswa;
+        abort_unless($ujian->kelas_id === $siswa->kelas_id && $ujian->bisaDiikuti($siswa->id), 404);
     }
 
     private function pengerjaan(Request $request, Ujian $ujian): ?Pengerjaan

@@ -3,7 +3,13 @@
 
     <div class="flex flex-wrap items-center justify-between gap-3 mt-3 mb-6">
         <h1 class="text-3xl">Rekap Nilai {{ $kelas->nama }}</h1>
+
+        <!-- Button Ekspor Nilai -->
         <a class="nb-btn biru" href="{{ route('penilaian.eksporKelas', $kelas) }}">Ekspor Excel</a>
+
+        <!-- Button Leger Nilai Akhir -->
+        <a class="nb-btn putih" href="{{ route('leger.index', $kelas) }}">Leger (nilai akhir)</a>
+
     </div>
 
     <div class="nb-card nb-scroll">
