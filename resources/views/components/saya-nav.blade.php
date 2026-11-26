@@ -6,6 +6,13 @@
         ['saya.agenda', 'Agenda'],
         ['saya.pengumuman', 'Pengumuman'],
     ];
+
+    // Fase 9F: menu Poin hanya muncul kalau guru menghidupkan gamifikasi untuk kelas siswa ini
+    $akunNav = request()->attributes->get('akun');
+    if (\App\Models\GamifikasiPengaturan::aktifUntuk($akunNav?->siswa?->kelas_id)) {
+        $menu[] = ['saya.poin', 'Poin'];
+    }
+
 @endphp
 
 <nav class="flex flex-wrap gap-2 mb-6" aria-label="Menu Dashboard Saya">

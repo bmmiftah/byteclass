@@ -224,6 +224,8 @@ class UjianController extends Controller
                 'nilai' => $p?->nilai,
                 'pelanggaran' => (int) ($p?->pelanggaran ?? 0),
                 'perlu' => (bool) $p?->perlu_koreksi,
+                'terkunci' => (bool) $p?->terkunci_pada,
+                'kena_batas' => (bool) $p?->kena_batas,
             ];
         })->values();
 

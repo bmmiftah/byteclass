@@ -85,6 +85,7 @@ class SayaTugasController extends Controller
             'status'   => $t->statusUntuk($p),
             'saran'    => $t->jenis === 'eksternal' ? $t->namaBerkasSaran($siswa) : null,
             'bisaUbah' => $this->bisaKumpul($t, $p),
+            'rincian' => \App\Services\RubrikTugas::rincian($t, $p),
         ]);
     }
 

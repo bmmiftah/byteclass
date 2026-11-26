@@ -73,11 +73,30 @@
                 </p>
             @endif
 
+            @if (count($rincian) && $p->nilai !== null)
+                <div class="mt-2 text-sm" id="rincian-nilai">
+                    @foreach ($rincian as $r)
+                        <p>{{ $r['nama'] }}: <b>{{ \App\Services\RubrikTugas::teks($r) }}</b></p>
+                    @endforeach
+                </div>
+            @endif
+
             @if ($p->komentar)
                 <div class="mt-2 border-2 border-black p-2" style="background: var(--kuning)">
                     <b>Komentar guru:</b> {{ $p->komentar }}
                 </div>
             @endif
+        </div>
+    @endif
+
+    @if (count($rincian))
+        <div class="nb-card mb-4" id="kartu-rubrik-siswa">
+            <p class="font-bold">Cara penilaian (rubrik)</p>
+            <ul class="text-sm mt-1 list-disc pl-5">
+                @foreach ($rincian as $r)
+                    <li>{{ $r['nama'] }} &middot; {{ $r['porsi'] }}% dari nilai ({{ $r['tipe'] === 'ceklis' ? 'Ya/Tidak' : 'skala ' . $r['maks'] }})</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 

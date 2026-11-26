@@ -62,6 +62,9 @@
     <!-- Button Agenda -->
     <a href="{{ route('agenda.index', $kelas) }}" class="nb-btn pink mb-6">Agenda</a>
 
+    <!-- Button Lencana (Poin) -->
+    <a href="{{ route('poin.index', $kelas) }}" class="nb-btn kuning mb-6">Poin &amp; Lencana</a>
+
     @if (session('ok'))
         <div class="nb-card mb-4" style="background: var(--hijau)">{{ session('ok') }}</div>
     @endif

@@ -78,6 +78,11 @@ class Tugas extends Model
         return $this->hasMany(TugasPengumpulan::class);
     }
 
+    public function kriterias()
+    {
+        return $this->hasMany(TugasKriteria::class)->orderBy('urutan')->orderBy('id');
+    }
+
     public function ekstensiBoleh(): array
     {
         return self::EKSTENSI[$this->jenis_berkas] ?? self::EKSTENSI['umum'];

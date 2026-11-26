@@ -20,6 +20,7 @@ use App\Http\Controllers\JurnalController;
 use App\Http\Controllers\PresensiController;
 
 use App\Http\Controllers\AkunSiswaController;
+use App\Http\Controllers\AnticurangController;
 use App\Http\Controllers\CbtController;
 use App\Http\Controllers\SoalController;
 use App\Http\Controllers\UjianController;
@@ -169,6 +170,12 @@ Route::middleware(['auth', 'aktif', 'milik']) ->group(function () {
         ->name('ujian.simpanKoreksi');
     Route::post('ujian/{ujian}/kirim-nilai', [UjianController::class, 'kirimNilai'])->name('ujian.kirimNilai');
 
+    // ---- Fase 9E: anti-curang ----
+    Route::post('ujian/{ujian}/anticurang', [AnticurangController::class, 'simpan'])->name('ujian.anticurang');
+    Route::get('ujian/{ujian}/log/{pengerjaan}', [AnticurangController::class, 'log'])->name('ujian.log');
+    Route::post('pengerjaan/{pengerjaan}/buka-kunci', [AnticurangController::class, 'bukaKunci'])->name('ujian.bukaKunci');
+    Route::get('ujian/{ujian}/kemiripan', [AnticurangController::class, 'kemiripan'])->name('ujian.kemiripan');
+
     // Warna Kelas
     Route::post('kelas/{kelas}/warna', [KelasController::class, 'warna'])->name('kelas.warna');
 
@@ -217,6 +224,9 @@ Route::middleware(['auth', 'aktif', 'milik']) ->group(function () {
             ->name('tugas.kirimNilai');
         Route::post('tugas/{tugas}/tandai/{siswa}', [\App\Http\Controllers\TugasController::class, 'tandai'])
             ->name('tugas.tandai');
+        // ---- Fase 9D: rubrik untuk tugas ----
+        Route::post('tugas/{tugas}/rubrik', [\App\Http\Controllers\RubrikTugasController::class, 'pasang'])->name('tugas.rubrik.pasang');
+        Route::post('tugas/{tugas}/rubrik/lepas', [\App\Http\Controllers\RubrikTugasController::class, 'lepas'])->name('tugas.rubrik.lepas');
         Route::post('tugas-kumpul/{pengumpulan}/nilai', [\App\Http\Controllers\TugasController::class, 'nilai'])
             ->name('tugas.nilai');
         Route::get('tugas-berkas/{berkas}', [\App\Http\Controllers\TugasController::class, 'berkas'])
@@ -283,6 +293,8 @@ Route::middleware('throttle:240,1')->group(function () {
             Route::get('{ujian}/kerjakan', [CbtController::class, 'kerjakan'])->name('cbt.kerjakan');
             Route::post('{ujian}/jawab', [CbtController::class, 'jawab'])->name('cbt.jawab');
             Route::post('{ujian}/pelanggaran', [CbtController::class, 'pelanggaran'])->name('cbt.pelanggaran');
+            Route::post('{ujian}/kejadian', [CbtController::class, 'kejadian'])->name('cbt.kejadian');
+            Route::get('{ujian}/status', [CbtController::class, 'status'])->name('cbt.status');
             Route::post('{ujian}/selesai', [CbtController::class, 'selesai'])->name('cbt.selesai');
             Route::get('{ujian}/hasil', [CbtController::class, 'hasil'])->name('cbt.hasil');
             Route::get('{ujian}/gambar/{soal}', [CbtController::class, 'gambar'])->name('cbt.gambar');
@@ -444,6 +456,22 @@ Route::prefix('saya')->group(function () {
             ->name('saya.push.uji');
     });
 });
+
+    /* ===== Fase 9F: Gamifikasi (poin, lencana, papan tim, target kelas) ===== */
+    // Sisi guru (login guru + penjaga isolasi 'milik')
+    Route::middleware(['auth', 'aktif', 'milik'])->group(function () {
+        Route::get('kelas/{kelas}/poin', [\App\Http\Controllers\PoinController::class, 'index'])->name('poin.index');
+        Route::post('kelas/{kelas}/poin/aktif', [\App\Http\Controllers\PoinController::class, 'aktif'])->name('poin.aktif');
+        Route::post('kelas/{kelas}/poin/pengaturan', [\App\Http\Controllers\PoinController::class, 'pengaturan'])->name('poin.pengaturan');
+        Route::post('kelas/{kelas}/poin/mulai-baru', [\App\Http\Controllers\PoinController::class, 'mulaiBaru'])->name('poin.mulaiBaru');
+        Route::post('kelas/{kelas}/poin/beri', [\App\Http\Controllers\PoinController::class, 'beri'])->middleware('throttle:30,1')->name('poin.beri');
+        Route::delete('poin/{poin}', [\App\Http\Controllers\PoinController::class, 'hapus'])->whereNumber('poin')->name('poin.hapus');
+    });
+
+    // Sisi siswa (di bawah /saya)
+    Route::prefix('saya')->middleware(\App\Http\Middleware\SiswaMasuk::class)->group(function () {
+        Route::get('poin', [\App\Http\Controllers\SayaPoinController::class, 'index'])->name('saya.poin');
+    });
 
 
 

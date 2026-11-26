@@ -239,6 +239,8 @@
         </div>
     </form>
 
+    @include('ujian._anticurang')
+
     @unless ($terkunci)
         <form
             method="POST"

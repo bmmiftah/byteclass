@@ -7,11 +7,12 @@ use App\Models\Jawaban;
 use App\Models\Pengerjaan;
 use App\Models\Soal;
 use App\Models\Ujian;
+use App\Services\Anticurang;
 use App\Services\KoreksiUjian;
+use App\Support\SiswaSesi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use	App\Support\SiswaSesi;
 
 class CbtController extends Controller
 {
@@ -29,12 +30,10 @@ class CbtController extends Controller
         $akun = AkunSiswa::where('kode', AkunSiswa::bersihkan($request->input('kode')))->first();
 
         if (! $akun || ! $akun->siswa || ! $akun->siswa->aktif) {
-            return back()->withInput()->withErrors([
-                'kode' => 'Kode tidak dikenal. Periksa lagi kartu loginmu.',
-            ]);
+            return back()->withInput()->withErrors(['kode' => 'Kode tidak dikenal. Periksa lagi kartu loginmu.']);
         }
 
-        SiswaSesi::masukkan($request,	$akun);
+        SiswaSesi::masukkan($request, $akun);
 
         return redirect()->route('cbt.daftar');
     }
@@ -50,21 +49,16 @@ class CbtController extends Controller
 
     public function daftar(Request $request)
     {
-        $akun = $this->akun($request);
+        $akun  = $this->akun($request);
         $siswa = $akun->siswa;
 
-        $ujians = Ujian::untukSiswa($siswa->id)
-            ->where('kelas_id', $siswa->kelas_id)
-            ->whereIn('status', ['buka', 'tutup'])
-            ->orderByDesc('id')
-            ->get();
+        $ujians = Ujian::untukSiswa($siswa->id)->where('kelas_id', $siswa->kelas_id)->whereIn('status', ['buka', 'tutup'])
+            ->orderByDesc('id')->get();
 
-        $ps = Pengerjaan::where('siswa_id', $siswa->id)
-            ->whereIn('ujian_id', $ujians->pluck('id'))
-            ->get()
-            ->keyBy('ujian_id');
+        $ps = Pengerjaan::where('siswa_id', $siswa->id)->whereIn('ujian_id', $ujians->pluck('id'))
+            ->get()->keyBy('ujian_id');
 
-        // Ujian ditutup hanya terlihat jika siswa pernah mengerjakannya
+        // ujian ditutup hanya terlihat jika siswa pernah mengerjakannya
         $ujians = $ujians->filter(fn ($u) => $u->status === 'buka' || isset($ps[$u->id]))->values();
 
         return view('cbt.daftar', compact('akun', 'siswa', 'ujians', 'ps'));
@@ -94,21 +88,13 @@ class CbtController extends Controller
         $request->validate(['token' => 'required|string|max:20']);
 
         if (! $ujian->bisaMulai()) {
-            return back()->withErrors([
-                'token' => 'Ujian belum dibuka atau sudah ditutup.',
-            ]);
+            return back()->withErrors(['token' => 'Ujian belum dibuka atau sudah ditutup.']);
         }
-
         if (! hash_equals(strtoupper($ujian->token), AkunSiswa::bersihkan($request->input('token')))) {
-            return back()->withErrors([
-                'token' => 'Token salah. Tanyakan ke gurumu.',
-            ]);
+            return back()->withErrors(['token' => 'Token salah. Tanyakan ke gurumu.']);
         }
-
         if ($ujian->soals()->count() === 0) {
-            return back()->withErrors([
-                'token' => 'Ujian ini belum punya soal.',
-            ]);
+            return back()->withErrors(['token' => 'Ujian ini belum punya soal.']);
         }
 
         [$urutan, $opsi] = $ujian->susunUrutan();
@@ -121,9 +107,9 @@ class CbtController extends Controller
         Pengerjaan::firstOrCreate(
             ['ujian_id' => $ujian->id, 'siswa_id' => $this->akun($request)->siswa_id],
             [
-                'mulai_pada' => now(),
-                'batas_pada' => $batas,
-                'status' => 'berjalan',
+                'mulai_pada'  => now(),
+                'batas_pada'  => $batas,
+                'status'      => 'berjalan',
                 'urutan_soal' => $urutan,
                 'urutan_opsi' => $opsi,
             ]
@@ -142,44 +128,53 @@ class CbtController extends Controller
         if (! $p) {
             return redirect()->route('cbt.token', $ujian);
         }
-
         if ($p->status === 'selesai') {
             return redirect()->route('cbt.hasil', $ujian);
         }
-
         if (now()->gte($p->batas_pada)) {
             KoreksiUjian::selesaikan($p);
 
             return redirect()->route('cbt.hasil', $ujian);
         }
 
-        // Hanya satu perangkat aktif: perangkat ini mengambil alih
+        // hanya satu perangkat aktif: perangkat ini mengambil alih
         $kode = Str::random(40);
         $p->update(['sesi_kode' => $kode]);
         $request->session()->put('sesi.'.$ujian->id, $kode);
 
+        // Fase 9E: terkunci karena melewati batas pelanggaran. Soal tidak dikirim sama sekali.
+        if ($p->terkunci()) {
+            return view('cbt.terkunci', [
+                'ujian' => $ujian,
+                'p'     => $p,
+                'cfg'   => [
+                    'sisa'      => $p->sisaDetik(),
+                    'urlStatus' => route('cbt.status', $ujian),
+                    'urlHasil'  => route('cbt.hasil', $ujian),
+                ],
+            ]);
+        }
+
         $soals = $ujian->soals()->get()->keyBy('id');
-        $jaw = $p->jawabans()->get()->keyBy('soal_id');
+        $jaw   = $p->jawabans()->get()->keyBy('soal_id');
 
         // PENTING: kunci jawaban TIDAK dikirim ke browser
         $daftar = collect($p->urutan_soal)->map(function ($id) use ($soals, $jaw, $p, $ujian) {
             $s = $soals[$id];
+
             $item = [
-                'id' => $s->id,
-                'tipe' => $s->tipe,
-                'teks' => $s->teks,
+                'id'     => $s->id,
+                'tipe'   => $s->tipe,
+                'teks'   => $s->teks,
                 'gambar' => $s->gambar ? route('cbt.gambar', [$ujian, $s]) : null,
-                'j' => $jaw[$id]->jawaban ?? '',
-                'r' => (bool) ($jaw[$id]->ragu ?? false),
-                'opsi' => [],
+                'j'      => $jaw[$id]->jawaban ?? '',
+                'r'      => (bool) ($jaw[$id]->ragu ?? false),
+                'opsi'   => [],
             ];
 
             if ($s->tipe === 'pg') {
                 $huruf = $p->urutan_opsi[$id] ?? array_keys($s->opsi ?? []);
-                $item['opsi'] = collect($huruf)
-                    ->map(fn ($k) => ['k' => $k, 't' => $s->opsi[$k] ?? ''])
-                    ->values()
-                    ->all();
+                $item['opsi'] = collect($huruf)->map(fn ($k) => ['k' => $k, 't' => $s->opsi[$k] ?? ''])->values()->all();
             }
 
             return $item;
@@ -187,15 +182,22 @@ class CbtController extends Controller
 
         return view('cbt.kerjakan', [
             'ujian' => $ujian,
-            'p' => $p,
-            'cfg' => [
-                'soals' => $daftar,
-                'sisa' => $p->sisaDetik(),
-                'penyimpanan' => 'cbt-'.$p->id,
-                'urlJawab' => route('cbt.jawab', $ujian),
+            'p'     => $p,
+            'cfg'   => [
+                'soals'         => $daftar,
+                'sisa'          => $p->sisaDetik(),
+                'penyimpanan'   => 'cbt-'.$p->id,
+                'urlJawab'      => route('cbt.jawab', $ujian),
                 'urlPelanggaran' => route('cbt.pelanggaran', $ujian),
-                'urlHasil' => route('cbt.hasil', $ujian),
-                'urlMasuk' => route('cbt.masuk'),
+                'urlKejadian'   => route('cbt.kejadian', $ujian),
+                'urlHasil'      => route('cbt.hasil', $ujian),
+                'urlMasuk'      => route('cbt.masuk'),
+                'blokirSalin'   => (bool) $ujian->blokir_salin,
+                'layarPenuh'    => (bool) $ujian->layar_penuh,
+                'batas'         => $ujian->punyaBatas() ? (int) $ujian->batas_pelanggaran : null,
+                'kumpulOtomatis' => $ujian->aksi_batas === 'kumpul',
+                'pelanggaran'   => (int) $p->pelanggaran,
+                'sisaKesempatan' => Anticurang::sisaKesempatan($p),
             ],
         ]);
     }
@@ -210,48 +212,86 @@ class CbtController extends Controller
         if ($p->status !== 'berjalan') {
             return response()->json(['selesai' => true], 410);
         }
-
         if (! $this->sesiSah($request, $ujian, $p)) {
-            return response()->json([
-                'pesan' => 'Ujian ini dibuka di perangkat lain. Perangkat ini dihentikan.',
-            ], 409);
+            return response()->json(['pesan' => 'Ujian ini dibuka di perangkat lain. Perangkat ini dihentikan.'], 409);
         }
-
         if (now()->gt($p->batas_pada->copy()->addSeconds(10))) {
             KoreksiUjian::selesaikan($p);
 
             return response()->json(['selesai' => true], 410);
         }
+        if ($p->terkunci()) {
+            return response()->json(['terkunci' => true], 423);
+        }
 
         $data = $request->validate([
             'soal_id' => 'required|integer',
             'jawaban' => 'nullable|string|max:5000',
-            'ragu' => 'nullable|boolean',
+            'ragu'    => 'nullable|boolean',
         ]);
 
-        abort_unless(in_array((int) $data['soal_id'], $p->urutan_soal ?? [], true), 422);
+        abort_unless(in_array((int) $data['soal_id'], $p->urutan_soal, true), 422);
 
         Jawaban::updateOrCreate(
             ['pengerjaan_id' => $p->id, 'soal_id' => (int) $data['soal_id']],
-            [
-                'jawaban' => $data['jawaban'] ?? null,
-                'ragu' => (bool) ($data['ragu'] ?? false),
-            ]
+            ['jawaban' => $data['jawaban'] ?? null, 'ragu' => (bool) ($data['ragu'] ?? false)]
         );
 
         return response()->json(['sisa' => $p->sisaDetik()]);
     }
 
+    // titik lama dari Fase 6, dipertahankan agar tes lama tetap jalan: dicatat sebagai "pindah tab"
     public function pelanggaran(Request $request, Ujian $ujian)
     {
         $this->bolehLihat($request, $ujian);
 
         $p = $this->pengerjaan($request, $ujian);
         if ($p && $p->status === 'berjalan' && $this->sesiSah($request, $ujian, $p)) {
-            $p->increment('pelanggaran');
+            Anticurang::catat($p, 'keluar_tab');
         }
 
         return response()->noContent();
+    }
+
+    // Fase 9E: kejadian dari browser siswa (pindah tab, salin, keluar layar penuh, dst.)
+    public function kejadian(Request $request, Ujian $ujian)
+    {
+        $this->bolehLihat($request, $ujian);
+
+        $p = $this->pengerjaan($request, $ujian);
+        abort_unless($p, 404);
+
+        if ($p->status !== 'berjalan') {
+            return response()->json(['selesai' => true], 410);
+        }
+        if (! $this->sesiSah($request, $ujian, $p)) {
+            return response()->json(['pesan' => 'Ujian ini dibuka di perangkat lain.'], 409);
+        }
+
+        $data = $request->validate([
+            'jenis' => 'required|string|in:'.implode(',', array_keys(Anticurang::DARI_SISWA)),
+            'detik' => 'nullable|integer|min:0|max:86400',
+        ]);
+
+        $detail = isset($data['detik']) ? 'setelah '.$data['detik'].' detik' : null;
+
+        return response()->json(Anticurang::catat($p, $data['jenis'], $detail));
+    }
+
+    // Fase 9E: dipakai layar "terkunci" untuk mengetahui kapan kunci dibuka guru
+    public function status(Request $request, Ujian $ujian)
+    {
+        $this->bolehLihat($request, $ujian);
+
+        $p = $this->pengerjaan($request, $ujian);
+        abort_unless($p, 404);
+
+        if ($p->status === 'berjalan' && now()->gte($p->batas_pada)) {
+            KoreksiUjian::selesaikan($p);
+            $p->refresh();
+        }
+
+        return response()->json(Anticurang::keadaan($p->load('ujian')) + ['sisa_detik' => $p->sisaDetik()]);
     }
 
     public function selesai(Request $request, Ujian $ujian)
@@ -261,7 +301,7 @@ class CbtController extends Controller
         $p = $this->pengerjaan($request, $ujian);
         abort_unless($p, 404);
 
-        // Hanya perangkat aktif yang boleh mengumpulkan
+        // hanya perangkat aktif yang boleh mengumpulkan
         if ($p->status === 'berjalan' && $this->sesiSah($request, $ujian, $p)) {
             KoreksiUjian::selesaikan($p);
         }
@@ -277,7 +317,6 @@ class CbtController extends Controller
         if (! $p) {
             return redirect()->route('cbt.daftar');
         }
-
         if ($p->status === 'berjalan') {
             return redirect()->route('cbt.kerjakan', $ujian);
         }
@@ -285,14 +324,14 @@ class CbtController extends Controller
         return view('cbt.hasil', compact('ujian', 'p'));
     }
 
-    // Gambar soal hanya untuk siswa yang sedang/pernah mengerjakan ujian itu
+    // gambar soal hanya untuk siswa yang sedang/pernah mengerjakan ujian itu
     public function gambar(Request $request, Ujian $ujian, Soal $soal)
     {
         $this->bolehLihat($request, $ujian);
 
         $p = $this->pengerjaan($request, $ujian);
         abort_unless(
-            $p && $soal->gambar && in_array($soal->id, $p->urutan_soal ?? [], true)
+            $p && $soal->gambar && in_array($soal->id, $p->urutan_soal, true)
             && Storage::disk('local')->exists($soal->gambar),
             404
         );
@@ -312,14 +351,14 @@ class CbtController extends Controller
     private function bolehLihat(Request $request, Ujian $ujian): void
     {
         $siswa = $this->akun($request)->siswa;
+
         abort_unless($ujian->kelas_id === $siswa->kelas_id && $ujian->bisaDiikuti($siswa->id), 404);
     }
 
     private function pengerjaan(Request $request, Ujian $ujian): ?Pengerjaan
     {
         return Pengerjaan::where('ujian_id', $ujian->id)
-            ->where('siswa_id', $this->akun($request)->siswa_id)
-            ->first();
+            ->where('siswa_id', $this->akun($request)->siswa_id)->first();
     }
 
     private function sesiSah(Request $request, Ujian $ujian, Pengerjaan $p): bool

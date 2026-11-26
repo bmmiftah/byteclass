@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Number;
 use Illuminate\Support\Str;
+use	App\Models\Rubrik;
+use	App\Models\TugasNilaiKriteria;
+use	App\Services\RubrikTugas;
 
 /**
  * Sisi guru untuk Tugas. Semua route-nya ada di grup ['auth','aktif','milik'],
@@ -181,7 +184,13 @@ class TugasController extends Controller
         $jumlahFile = $tugas->jumlahBerkasAda();
         $sisaHari = $tugas->hapus_pada ? (int) ceil(now()->diffInHours($tugas->hapus_pada, false) / 24) : null;
 
-        return view('tugas.hasil', compact('tugas', 'siswas', 'kumpul', 'ringkas', 'pakaiTugas', 'jumlahFile', 'sisaHari'));
+        // Fase 9D: rubrik
+        $kriterias = $tugas->kriterias()->get();
+        $rubriks   = Rubrik::where('guru_id', auth()->id())->withCount('kriterias')->orderBy('nama')->get();
+        $skor      = TugasNilaiKriteria::whereIn('pengumpulan_id', $kumpul->pluck('id'))->get()
+            ->groupBy('pengumpulan_id')->map(fn ($g) => $g->pluck('nilai', 'tugas_kriteria_id'));
+
+        return view('tugas.hasil', compact('tugas', 'siswas', 'kumpul', 'ringkas', 'pakaiTugas', 'jumlahFile', 'sisaHari', 'kriterias', 'rubriks', 'skor'));
     }
 
     /* ---------- status: terbit, arsip ---------- */
@@ -356,6 +365,29 @@ class TugasController extends Controller
 
     public function nilai(Request $request, TugasPengumpulan $pengumpulan)
     {
+
+       // Fase 9D: tugas yang memakai rubrik dinilai per kriteria
+        $pengumpulan->loadMissing('tugas');
+        if ($pengumpulan->tugas->kriterias()->exists()) {
+            $d = $request->validate([
+                'komentar'   => 'nullable|string|max:1000',
+                'kriteria'   => 'nullable|array',
+                'kriteria.*' => 'nullable',
+            ]);
+
+            $hasil = RubrikTugas::simpanNilai($pengumpulan, (array) ($d['kriteria'] ?? []));
+            if ($hasil['galat']) {
+                return back()->withErrors(['nilai' => $hasil['galat']])->withInput();
+            }
+
+            $pengumpulan->update([
+                'komentar'           => ($d['komentar'] ?? '') !== '' ? $d['komentar'] : null,
+                'terverifikasi_pada' => $pengumpulan->terverifikasi_pada ?? now(),
+            ]);
+
+            return back()->with('ok', 'Tersimpan.');
+        } 
+
         $d = $request->validate([
             'nilai'    => 'nullable|numeric|min:0|max:100',
             'komentar' => 'nullable|string|max:1000',
@@ -410,13 +442,15 @@ class TugasController extends Controller
                 'kkm'      => 75,
             ]);
 
-            $kriteria = $penilaian->kriterias()->first() ?? $penilaian->kriterias()->create([
+            // Fase 9D: tugas berrubrik mengisi satu kolom per kriteria di Penilaian
+            $peta = RubrikTugas::sinkronKriteria($penilaian, $tugas);
+            $kriteria = $peta !== null ? null : ($penilaian->kriterias()->first() ?? $penilaian->kriterias()->create([
                 'nama'   => 'Nilai Tugas',
                 'tipe'   => 'angka',
                 'maks'   => 100,
                 'bobot'  => 1,
                 'urutan' => 0,
-            ]);
+            ]));
 
             foreach ($tugas->pengumpulans()->whereNotNull('nilai')->get() as $p) {
                 $ns = NilaiSiswa::updateOrCreate(
@@ -424,10 +458,26 @@ class TugasController extends Controller
                     ['total' => $p->nilai]
                 );
 
-                NilaiDetail::updateOrCreate(
-                    ['nilai_siswa_id' => $ns->id, 'kriteria_id' => $kriteria->id],
-                    ['nilai' => $p->nilai]
-                );
+                if ($peta === null) {
+                    NilaiDetail::updateOrCreate(
+                        ['nilai_siswa_id' => $ns->id, 'kriteria_id' => $kriteria->id],
+                        ['nilai' => $p->nilai]
+                    );
+                    continue;
+                }
+
+                $skor = TugasNilaiKriteria::where('pengumpulan_id', $p->id)->pluck('nilai', 'tugas_kriteria_id');
+
+                foreach ($peta as $tugasKriteriaId => $kriteriaPenilaian) {
+                    if ($skor->has($tugasKriteriaId)) {
+                        NilaiDetail::updateOrCreate(
+                            ['nilai_siswa_id' => $ns->id, 'kriteria_id' => $kriteriaPenilaian->id],
+                            ['nilai' => $skor->get($tugasKriteriaId)]
+                        );
+                    } else {
+                        NilaiDetail::where('nilai_siswa_id', $ns->id)->where('kriteria_id', $kriteriaPenilaian->id)->delete();
+                    }
+                }
             }
 
             $tugas->update(['penilaian_id' => $penilaian->id]);

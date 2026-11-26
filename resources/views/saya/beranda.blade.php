@@ -9,6 +9,7 @@
     <x-saya-nav />
     <x-pwa-segera />
     <x-pwa-pasang />
+    <x-poin-ringkas	/>
 
     <div class="grid gap-4 sm:grid-cols-3 mb-8">
         <a
