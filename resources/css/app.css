@@ -41,7 +41,14 @@ h1, h2, h3, .judul {
 	box-shadow: 6px 6px 0 var(--ink);
 }
 
-/* Tombol */
+/* Tombol
+   Aturan pakai:
+   - bawaan (kuning)        = aksi utama di bagian itu (Simpan, Tambah, Mulai)
+   - .putih / .sekunder     = aksi biasa (Kembali, Batal, Arsipkan)
+   - .merah / .bahaya       = aksi yang menghapus / tidak bisa dibatalkan
+   - .kecil                 = tombol di dalam baris tabel / kartu
+   - .blok                  = lebar penuh
+   Warna lain (.biru .pink .hijau) masih jalan untuk halaman lama. */
 .nb-btn {
 	display: inline-flex;
 	align-items: center;
@@ -50,6 +57,9 @@ h1, h2, h3, .judul {
 	min-height: 44px;
 	padding: .5rem 1.1rem;
 	font-weight: 700;
+	font-size: .95rem;
+	line-height: 1.2;
+	text-align: center;
 	color: var(--ink);
 	background: var(--kuning);
 	border: 3px solid var(--ink);
@@ -58,9 +68,17 @@ h1, h2, h3, .judul {
 	transition: transform .12s ease, box-shadow .12s ease;
 }
 
-.nb-btn:hover {
-	transform: translate(-2px, -2px);
-	box-shadow: 6px 6px 0 var(--ink);
+.nb-btn .ikon {
+	width: 1.15rem;
+	height: 1.15rem;
+}
+
+/* hover hanya di perangkat yang punya mouse (di HP hover suka "nyangkut" setelah disentuh) */
+@media (hover: hover) {
+	.nb-btn:hover {
+		transform: translate(-2px, -2px);
+		box-shadow: 6px 6px 0 var(--ink);
+	}
 }
 
 .nb-btn:active {
@@ -68,16 +86,47 @@ h1, h2, h3, .judul {
 	box-shadow: 0 0 0 var(--ink);
 }
 
+.nb-btn:focus-visible,
+.nb-tab:focus-visible,
+.nb-link:focus-visible,
+.nb-menu:focus-visible,
+.nb-acc > summary:focus-visible {
+	outline: 3px solid var(--biru);
+	outline-offset: 3px;
+}
+
 .nb-btn.biru {
 	background: var(--biru);
 }
 
-.nb-btn.merah {
+.nb-btn.merah,
+.nb-btn.bahaya {
 	background: var(--merah);
 }
 
-.nb-btn.putih {
+.nb-btn.putih,
+.nb-btn.sekunder {
 	background: #fff;
+}
+
+.nb-btn.kecil {
+	min-height: 40px;
+	padding: .25rem .8rem;
+	font-size: .85rem;
+	box-shadow: 3px 3px 0 var(--ink);
+}
+
+.nb-btn.blok {
+	display: flex;
+	width: 100%;
+}
+
+/* Deretan tombol: ganti kebiasaan mb-6 di tiap tombol */
+.nb-aksi {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .75rem;
 }
 
 /* Form */
@@ -102,6 +151,23 @@ h1, h2, h3, .judul {
 	box-shadow: var(--shadow);
 }
 
+.nb-input[type="file"] {
+	padding: .4rem;
+	cursor: pointer;
+}
+
+.nb-input[type="file"]::file-selector-button {
+	margin-right: .75rem;
+	min-height: 34px;
+	padding: .2rem .8rem;
+	font-family: inherit;
+	font-weight: 700;
+	color: var(--ink);
+	background: var(--kuning);
+	border: 3px solid var(--ink);
+	cursor: pointer;
+}
+
 .nb-error {
 	color: #b00020;
 	font-weight: 600;
@@ -113,27 +179,260 @@ h1, h2, h3, .judul {
 	border-right: 3px solid var(--ink);
 }
 
-.nb-bottom {
-	border-top: 3px solid var(--ink);
+/* sidebar ikut diam saat halaman di-scroll (tablet & desktop) */
+@media (min-width: 768px) {
+	.nb-side {
+		position: sticky;
+		top: 0;
+		align-self: flex-start;
+		height: 100vh;
+		overflow-y: auto;
+	}
 }
 
 .nb-link {
 	display: flex;
 	align-items: center;
-	gap: .5rem;
+	gap: .6rem;
+	min-height: 44px;
 	padding: .6rem .8rem;
 	font-weight: 700;
+	background: transparent;
 	border: 3px solid transparent;
+	cursor: pointer;
+	text-align: left;
 }
 
-.nb-link:hover {
-	border-color: var(--ink);
+.nb-link .ikon {
+	width: 1.3rem;
+	height: 1.3rem;
+}
+
+@media (hover: hover) {
+	.nb-link:hover {
+		border-color: var(--ink);
+	}
 }
 
 .nb-link.aktif {
 	background: var(--kuning);
 	border-color: var(--ink);
 	box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* Menu bawah (HP): 5 tab sama lebar, aman untuk HP berponi / gesture bar */
+.nb-bottom {
+	z-index: 30;
+	background: #fff;
+	border-top: 3px solid var(--ink);
+	padding: .4rem .4rem calc(.4rem + env(safe-area-inset-bottom));
+}
+
+.nb-tab {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: .15rem;
+	min-height: 56px;
+	padding: .3rem .1rem;
+	font-size: .7rem;
+	font-weight: 700;
+	line-height: 1.1;
+	text-align: center;
+	color: var(--ink);
+	background: transparent;
+	border: 3px solid transparent;
+	cursor: pointer;
+}
+
+.nb-tab .ikon {
+	width: 1.4rem;
+	height: 1.4rem;
+}
+
+.nb-tab.aktif {
+	background: var(--kuning);
+	border-color: var(--ink);
+	box-shadow: 2px 2px 0 var(--ink);
+}
+
+/* Lembar "Lainnya" (HP) */
+.nb-sheet-latar {
+	position: fixed;
+	inset: 0;
+	z-index: 40;
+	background: rgba(17, 17, 17, .55);
+}
+
+.nb-sheet {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 50;
+	max-height: 85vh;
+	overflow-y: auto;
+	padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+	background: #fff;
+	border-top: 3px solid var(--ink);
+	animation: naik-sheet .2s ease both;
+}
+
+.nb-link.kotak {
+	background: #fff;
+	border-color: var(--ink);
+	box-shadow: 3px 3px 0 var(--ink);
+}
+
+.nb-link.kotak.aktif {
+	background: var(--kuning);
+}
+
+.kunci-gulir {
+	overflow: hidden;
+}
+
+@keyframes naik-sheet {
+	from {
+		opacity: 0;
+		transform: translateY(24px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* ===== Menu kartu (halaman kelas) ===== */
+.nb-grup {
+	display: flex;
+	align-items: center;
+	gap: .6rem;
+	margin: 0 0 .75rem;
+	font-family: 'Space Grotesk', sans-serif;
+	font-size: .85rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .08em;
+}
+
+.nb-grup::after {
+	content: '';
+	flex: 1;
+	border-top: 3px solid var(--ink);
+}
+
+.nb-menu-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+	gap: .75rem;
+}
+
+.nb-menu {
+	display: flex;
+	align-items: center;
+	gap: .5rem;
+	min-height: 64px;
+	padding: .5rem .55rem;
+	font-size: .9rem;
+	font-weight: 700;
+	line-height: 1.15;
+	color: var(--ink);
+	background: #fff;
+	border: 3px solid var(--ink);
+	box-shadow: var(--shadow);
+	transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.nb-menu-ikon {
+	flex: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.4rem;
+	height: 2.4rem;
+	background: var(--w, var(--kuning));
+	border: 3px solid var(--ink);
+}
+
+.nb-menu > span:last-child {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.nb-menu-ikon .ikon {
+	width: 1.35rem;
+	height: 1.35rem;
+}
+
+@media (hover: hover) {
+	.nb-menu:hover {
+		transform: translate(-2px, -2px);
+		box-shadow: 6px 6px 0 var(--ink);
+	}
+}
+
+.nb-menu:active {
+	transform: translate(3px, 3px);
+	box-shadow: 1px 1px 0 var(--ink);
+}
+
+/* ===== Lipat-buka (details) ===== */
+.nb-acc {
+	background: #fff;
+	border: 3px solid var(--ink);
+	box-shadow: var(--shadow);
+}
+
+.nb-acc > summary {
+	display: flex;
+	align-items: center;
+	gap: .6rem;
+	min-height: 48px;
+	padding: .5rem .9rem;
+	font-weight: 700;
+	cursor: pointer;
+	list-style: none;
+}
+
+.nb-acc > summary::-webkit-details-marker {
+	display: none;
+}
+
+.nb-acc > summary::after {
+	content: '+';
+	margin-left: auto;
+	font-size: 1.5rem;
+	line-height: 1;
+}
+
+.nb-acc[open] > summary {
+	background: var(--kuning);
+	border-bottom: 3px solid var(--ink);
+}
+
+.nb-acc[open] > summary::after {
+	content: '\2212';
+}
+
+.nb-acc.bahaya[open] > summary {
+	background: #ffd6d6;
+}
+
+.nb-acc-isi {
+	padding: 1rem;
+}
+
+.nb-pisah {
+	padding-top: 1.25rem;
+	border-top: 3px dashed var(--ink);
+}
+
+.ikon {
+	flex: none;
+	width: 1.25rem;
+	height: 1.25rem;
 }
 
 /* Tabel */
